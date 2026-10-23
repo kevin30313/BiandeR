@@ -1,0 +1,110 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  WAITER
+  KITCHEN
+  CASHIER
+}
+
+enum TableStatus {
+  FREE
+  BUSY
+  WAITING_BILL
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PREPARATION
+  READY
+  DELIVERED
+  PAID
+}
+
+enum PaymentMethod {
+  CASH
+  POS_DEBIT
+  POS_CREDIT
+  TRANSFER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(WAITER)
+  createdAt DateTime @default(now())
+}
+
+model Table {
+  id     String      @id @default(uuid())
+  number Int         @unique
+  status TableStatus @default(FREE)
+  orders Order[]
+}
+
+model Category {
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  price       Float
+  isAvailable Boolean     @default(true)
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  tableId     String
+  table       Table       @relation(fields: [tableId], references: [id])
+  status      OrderStatus @default(PENDING)
+  totalAmount Float       @default(0)
+  items       OrderItem[]
+  payment     Payment?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  notes     String?
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  order         Order         @relation(fields: [orderId], references: [id])
+  amount        Float
+  paymentMethod PaymentMethod
+  referenceNum  String?       // Código de autorización/vouchers del POS (opcional)
+  createdAt     DateTime      @default(now())
+}
+
+model ShiftClose {
+  id          String   @id @default(uuid())
+  openedAt    DateTime
+  closedAt    DateTime @default(now())
+  totalCash   Float    // Total recaudado en efectivo
+  totalPos    Float    // Total recaudado en tarjetas (Débito + Crédito)
+  totalAmount Float    // Gran total del turno
+}
