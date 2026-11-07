@@ -9,8 +9,8 @@ COPY package*.json ./
 COPY tsconfig*.json ./
 COPY prisma ./prisma/
 
-# 4. Instalar dependencias
-RUN npm install
+# 4. Instalar dependencias (incluyendo devDependencies para que tsc pueda compilar)
+RUN npm install --include=dev
 
 # 5. Copiar codigo fuente
 COPY . .
