@@ -1,0 +1,31 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "restobar-backend": {
+      "root": "restobar-backend",
+      "framework": "express"
+    },
+    "restobar-frontend": {
+      "root": "restobar-frontend",
+      "framework": "vite",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "restobar-backend",
+          "format": "url",
+          "env": "VITE_API_URL"
+        }
+      ]
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": { "service": "restobar-backend" }
+    },
+    {
+      "source": "/(.*)",
+      "destination": { "service": "restobar-frontend" }
+    }
+  ]
+}
