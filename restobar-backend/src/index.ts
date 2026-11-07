@@ -50,13 +50,16 @@ app.set('io', io);
 app.use(cors());
 app.use(express.json());
 
-// Registro de rutas API
-app.use('/api/auth', authRoutes);
-app.use('/api/tables', tableRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/reports', reportRoutes);
+// Ruta raíz informativa
+app.get('/', (_req, res) => {
+  res.json({
+    status: 'online',
+    app: APP_NAME,
+    message: 'API de gestión de Restobar funcionando correctamente',
+    healthCheck: '/health',
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -66,6 +69,14 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Registro de rutas API
+app.use('/api/auth', authRoutes);
+app.use('/api/tables', tableRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Gestión de conexiones y salas (rooms)
 io.on('connection', (socket) => {
