@@ -64,9 +64,32 @@ export const WaiterOrders = () => {
         <section>
           <h3>2. Menú</h3>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-            <button onClick={() => setSelectedCategoryId('ALL')}>Todos</button>
+            <button
+              onClick={() => setSelectedCategoryId('ALL')}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: selectedCategoryId === 'ALL' ? '#0d6efd' : '#fff',
+                color: selectedCategoryId === 'ALL' ? '#fff' : '#000',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Todos
+            </button>
             {categories.map((c) => (
-              <button key={c.id} onClick={() => setSelectedCategoryId(c.id)}>
+              <button
+                key={c.id}
+                onClick={() => setSelectedCategoryId(c.id)}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: selectedCategoryId === c.id ? '#0d6efd' : '#fff',
+                  color: selectedCategoryId === c.id ? '#fff' : '#000',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
                 {c.name}
               </button>
             ))}
