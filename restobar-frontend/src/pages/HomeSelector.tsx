@@ -1,125 +1,223 @@
 import { useNavigate } from 'react-router-dom';
-import { UtensilsCrossed, ClipboardList, ChefHat, ReceiptText, ShieldCheck, ArrowRight, Flame } from 'lucide-react';
+import { 
+  UtensilsCrossed, 
+  Smartphone, 
+  ClipboardCheck, 
+  Flame, 
+  CreditCard, 
+  Lock, 
+  ArrowUpRight, 
+  Sparkles,
+  Layers,
+  Clock,
+  Wifi
+} from 'lucide-react';
 
 export const HomeSelector = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#111110] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(217,119,6,0.12),rgba(17,17,16,0))] text-[#f5f5f4] flex flex-col items-center justify-center p-6 font-sans">
+    <div className="min-h-screen bg-[#FBFBFA] text-zinc-900 flex flex-col justify-between font-sans selection:bg-orange-500 selection:text-white">
       
-      {/* Contenedor Principal */}
-      <div className="max-w-xl w-full text-center">
+      {/* HEADER NAVEGABLE COMPLETO */}
+      <header className="w-full border-b border-zinc-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          
+          {/* Logo & Brand */}
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center shadow-md shadow-orange-500/20">
+              <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
+            </div>
+            <div>
+              <span className="text-xl font-black tracking-tight text-zinc-900 font-serif">
+                Biande<span className="text-orange-600">R</span>
+              </span>
+              <span className="block text-[10px] font-mono tracking-widest text-zinc-400 uppercase -mt-1">
+                Restobar OS
+              </span>
+            </div>
+          </div>
+
+          {/* Badges de estado */}
+          <div className="hidden md:flex items-center gap-4 text-xs font-medium text-zinc-600">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              WebSockets en tiempo real activo
+            </div>
+            <div className="flex items-center gap-1.5 text-zinc-500 font-mono">
+              <Clock className="w-3.5 h-3.5 text-zinc-400" />
+              <span> Latencia &lt; 15ms</span>
+            </div>
+          </div>
+
+          {/* Botón rápido de login */}
+          <button
+            onClick={() => navigate('/login')}
+            className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide transition-all shadow-sm flex items-center gap-2"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>Acceso Sistema</span>
+          </button>
+        </div>
+      </header>
+
+      {/* CONTENIDO PRINCIPAL / SECCIÓN HERO */}
+      <main className="max-w-6xl mx-auto px-6 py-12 flex-1 w-full flex flex-col justify-center">
         
-        {/* Símbolo / Ilustración de Marca Minimalista (Tipo Logotipo Gastronómico) */}
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 mb-6 shadow-lg shadow-amber-950/30">
-          <UtensilsCrossed className="w-8 h-8 stroke-[1.5]" />
+        {/* Banner Superior Intro */}
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100/70 border border-orange-200 text-orange-800 text-xs font-semibold mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-orange-600" />
+            <span>Ecosistema Operativo Restobar</span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-zinc-900 mb-4 font-serif leading-tight">
+            Selecciona la estación de <span className="text-orange-600 underline decoration-orange-300 decoration-wavy underline-offset-4">trabajo</span>
+          </h1>
+          <p className="text-zinc-500 text-base sm:text-lg leading-relaxed">
+            Explora el flujo continuo entre la pre-orden interactiva del cliente, la validación del garzón, el despacho en cocina y el cierre en caja.
+          </p>
         </div>
 
-        {/* Título de Marca */}
-        <h1 className="text-4xl sm:text-5xl font-serif tracking-tight mb-2 text-amber-50 font-normal">
-          Biande<span className="text-amber-500 font-semibold italic">R</span>
-        </h1>
-        <p className="text-[#a8a29e] mb-10 text-sm sm:text-base tracking-wide uppercase font-mono">
-          Restobar & Cocina en Tiempo Real
-        </p>
-
-        {/* Tarjetas de Accesos */}
-        <div className="grid gap-3 text-left">
+        {/* BENTO GRID DE MÓDULOS DE ROL */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           
-          {/* Cliente */}
+          {/* Módulo Cliente (Destacado) */}
           <div
             onClick={() => navigate('/menu/1')}
-            className="group relative p-4.5 bg-[#1c1c1a]/80 border border-[#292926] rounded-xl cursor-pointer flex items-center justify-between transition-all duration-200 hover:bg-[#242421] hover:border-amber-500/40 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-amber-500/5 backdrop-blur-md"
+            className="group relative p-6 bg-white border border-zinc-200/90 rounded-2xl cursor-pointer transition-all duration-300 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-500/10 flex flex-col justify-between overflow-hidden"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 group-hover:bg-amber-500/20 transition-colors">
-                <UtensilsCrossed className="w-5 h-5" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-full -mr-6 -mt-6 transition-all group-hover:bg-orange-100"></div>
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-orange-50 border border-orange-200/60 text-orange-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-6 h-6" />
               </div>
-              <div>
-                <div className="font-medium text-sm sm:text-base text-stone-200 group-hover:text-amber-300 transition-colors">Menú Cliente (Mesa #1)</div>
-                <div className="text-xs text-[#78716c]">Pre-orden digital interactiva para comensales</div>
-              </div>
+              <span className="text-[11px] font-bold tracking-wider text-orange-600 uppercase font-mono">Módulo Comensal</span>
+              <h2 className="text-xl font-bold text-zinc-900 mt-1 mb-2 group-hover:text-orange-600 transition-colors">
+                Menú Digital (Mesa #1)
+              </h2>
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Interface optimizada para smartphone. Pre-orden interactiva directa por QR con sincronización en tiempo real.
+              </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#78716c] group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+            <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-zinc-900">
+              <span>Probar experiencia de cliente</span>
+              <ArrowUpRight className="w-4 h-4 text-orange-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </div>
           </div>
 
-          {/* Garzón */}
+          {/* Módulo Garzón */}
           <div
             onClick={() => navigate('/waiter')}
-            className="group relative p-4.5 bg-[#1c1c1a]/80 border border-[#292926] rounded-xl cursor-pointer flex items-center justify-between transition-all duration-200 hover:bg-[#242421] hover:border-emerald-500/40 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/5 backdrop-blur-md"
+            className="group relative p-6 bg-white border border-zinc-200/90 rounded-2xl cursor-pointer transition-all duration-300 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between overflow-hidden"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
-                <ClipboardList className="w-5 h-5" />
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <ClipboardCheck className="w-6 h-6" />
               </div>
-              <div>
-                <div className="font-medium text-sm sm:text-base text-stone-200 group-hover:text-emerald-300 transition-colors">Panel de Garzón</div>
-                <div className="text-xs text-[#78716c]">Validación de comandas y despacho a salón</div>
-              </div>
+              <span className="text-[11px] font-bold tracking-wider text-emerald-600 uppercase font-mono">Control de Salón</span>
+              <h2 className="text-xl font-bold text-zinc-900 mt-1 mb-2 group-hover:text-emerald-600 transition-colors">
+                Panel de Garzón
+              </h2>
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Validación táctil de comandas recibidas, asignación de mesas y despacho inmediato hacia fuegos.
+              </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#78716c] group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+            <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-zinc-900">
+              <span>Ver comandas pendientes</span>
+              <ArrowUpRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </div>
           </div>
 
-          {/* Cocina */}
+          {/* Módulo Cocina (KDS) */}
           <div
             onClick={() => navigate('/kitchen')}
-            className="group relative p-4.5 bg-[#1c1c1a]/80 border border-[#292926] rounded-xl cursor-pointer flex items-center justify-between transition-all duration-200 hover:bg-[#242421] hover:border-orange-500/40 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/5 backdrop-blur-md"
+            className="group relative p-6 bg-white border border-zinc-200/90 rounded-2xl cursor-pointer transition-all duration-300 hover:border-amber-500 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between overflow-hidden"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-lg text-orange-400 group-hover:bg-orange-500/20 transition-colors">
-                <ChefHat className="w-5 h-5" />
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200/60 text-amber-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Flame className="w-6 h-6" />
               </div>
-              <div>
-                <div className="font-medium text-sm sm:text-base text-stone-200 group-hover:text-orange-300 transition-colors">Pantalla Cocina (KDS)</div>
-                <div className="text-xs text-[#78716c]">Flujo de preparación y tiempos de fuegos</div>
-              </div>
+              <span className="text-[11px] font-bold tracking-wider text-amber-600 uppercase font-mono">KDS Producción</span>
+              <h2 className="text-xl font-bold text-zinc-900 mt-1 mb-2 group-hover:text-amber-600 transition-colors">
+                Pantalla de Cocina
+              </h2>
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Gestión de tickets por tiempos de preparación, alertas auditivas y cambio de estado de fuegos.
+              </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#78716c] group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all" />
+            <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-zinc-900">
+              <span>Monitor de tickets</span>
+              <ArrowUpRight className="w-4 h-4 text-amber-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </div>
           </div>
 
-          {/* Caja */}
+          {/* Módulo Caja */}
           <div
             onClick={() => navigate('/cashier')}
-            className="group relative p-4.5 bg-[#1c1c1a]/80 border border-[#292926] rounded-xl cursor-pointer flex items-center justify-between transition-all duration-200 hover:bg-[#242421] hover:border-purple-500/40 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-purple-500/5 backdrop-blur-md"
+            className="group relative p-6 bg-white border border-zinc-200/90 rounded-2xl cursor-pointer transition-all duration-300 hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/10 flex flex-col justify-between overflow-hidden"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-purple-500/10 border border-purple-500/20 rounded-lg text-purple-400 group-hover:bg-purple-500/20 transition-colors">
-                <ReceiptText className="w-5 h-5" />
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200/60 text-indigo-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <CreditCard className="w-6 h-6" />
               </div>
-              <div>
-                <div className="font-medium text-sm sm:text-base text-stone-200 group-hover:text-purple-300 transition-colors">Panel de Caja</div>
-                <div className="text-xs text-[#78716c]">Cierre de cuentas, boletas y pagos</div>
-              </div>
+              <span className="text-[11px] font-bold tracking-wider text-indigo-600 uppercase font-mono">Facturación & Cierre</span>
+              <h2 className="text-xl font-bold text-zinc-900 mt-1 mb-2 group-hover:text-indigo-600 transition-colors">
+                Panel de Caja
+              </h2>
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Pre-cuenta automatizada, división de pagos por persona y emisión de recibos de venta.
+              </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#78716c] group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all" />
+            <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-zinc-900">
+              <span>Gestión de cobro</span>
+              <ArrowUpRight className="w-4 h-4 text-indigo-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </div>
           </div>
 
-          {/* Admin */}
+          {/* Módulo Administración & Configuración */}
           <div
             onClick={() => navigate('/login')}
-            className="group relative p-4.5 bg-[#1c1c1a]/80 border border-[#292926] rounded-xl cursor-pointer flex items-center justify-between transition-all duration-200 hover:bg-[#242421] hover:border-stone-500/40 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-stone-500/5 backdrop-blur-md"
+            className="group relative p-6 bg-white border border-zinc-200/90 rounded-2xl cursor-pointer transition-all duration-300 hover:border-zinc-800 hover:shadow-xl hover:shadow-zinc-900/10 flex flex-col justify-between overflow-hidden md:col-span-2 lg:col-span-2"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-stone-800 border border-stone-700/50 rounded-lg text-stone-300 group-hover:bg-stone-700 transition-colors">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="font-medium text-sm sm:text-base text-stone-200 group-hover:text-white transition-colors">Administración & Login</div>
-                <div className="text-xs text-[#78716c]">Configuración de inventario, recetas y accesos</div>
+                <div className="w-12 h-12 rounded-xl bg-zinc-100 border border-zinc-200 text-zinc-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Layers className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-bold tracking-wider text-zinc-500 uppercase font-mono">Panel Maestro</span>
+                <h2 className="text-xl font-bold text-zinc-900 mt-1 mb-1 group-hover:text-zinc-700 transition-colors">
+                  Administración Central & Usuarios
+                </h2>
+                <p className="text-zinc-500 text-xs leading-relaxed max-w-lg">
+                  Control global de carta, edición de productos, roles de personal (`WAITER`, `KITCHEN`, `CASHIER`) y métricas operativas del negocio.
+                </p>
               </div>
+              <button className="px-5 py-2.5 rounded-xl bg-zinc-900 text-white text-xs font-semibold whitespace-nowrap self-start sm:self-center group-hover:bg-orange-600 transition-colors shadow-sm">
+                Iniciar Sesión Admin
+              </button>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#78716c] group-hover:text-stone-300 group-hover:translate-x-0.5 transition-all" />
           </div>
 
         </div>
 
-        {/* Footer */}
-        <div className="mt-12 flex items-center justify-center gap-2 text-xs text-[#78716c] font-mono tracking-wider">
-          <Flame className="w-3.5 h-3.5 text-amber-500" />
-          <span>BIANDER GASTRONOMY SYSTEM • PRODUCTION READY</span>
-        </div>
+      </main>
 
-      </div>
+      {/* FOOTER ESTRUCTURADO Y ELEGANTE */}
+      <footer className="w-full border-t border-zinc-200 bg-white py-6 px-6 mt-12 text-zinc-500 text-xs">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-zinc-900 font-serif">BiandeR OS</span>
+            <span>• Arquitectura SaaS Restobar en Tiempo Real</span>
+          </div>
+          <div className="flex items-center gap-6 text-zinc-400 font-mono text-[11px]">
+            <span className="flex items-center gap-1"><Wifi className="w-3 h-3 text-emerald-500" /> Socket.io Online</span>
+            <span>Node.js / Express</span>
+            <span>React + Vite</span>
+            <span>PostgreSQL</span>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 };
