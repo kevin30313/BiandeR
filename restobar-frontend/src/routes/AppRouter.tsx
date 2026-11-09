@@ -8,6 +8,7 @@ import { WaiterOrders } from '../pages/waiter/WaiterOrders';
 import CashierBoard from '../pages/cashier/CashierBoard';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import Login from '../pages/Login';
+import HomeSelector from '../pages/HomeSelector'; // <--- 1. Nuevo import
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -35,9 +36,14 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 export const AppRouter = () => (
   <BrowserRouter>
     <Routes>
+      {/* Selector principal público */}
+      <Route path="/" element={<HomeSelector />} /> {/* <--- 2. HomeSelector en la raíz */}
+      
       <Route path="/login" element={<Login />} />
       <Route path="/menu" element={<ClientMenu />} />
+      <Route path="/menu/:tableId" element={<ClientMenu />} />
 
+      {/* Rutas Protegidas por Rol */}
       <Route
         path="/kitchen"
         element={
@@ -73,6 +79,7 @@ export const AppRouter = () => (
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/admin/users"
         element={
@@ -80,13 +87,12 @@ export const AppRouter = () => (
             <UserManagement />
           </ProtectedRoute>
         }
-       />
+      />
 
-      <Route path="/" element={<Navigate to="/menu" replace />} />
+      {/* Redirección por defecto ante rutas desconocidas */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </BrowserRouter>
-  
 );
 
 export default AppRouter;
