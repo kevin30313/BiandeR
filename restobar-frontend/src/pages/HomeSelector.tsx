@@ -4,7 +4,6 @@ import {
   Smartphone, 
   ChefHat, 
   Receipt, 
-  ShieldAlert, 
   ArrowRight, 
   Flame,
   Radio,
@@ -115,7 +114,7 @@ export const HomeSelector = () => {
             </div>
           </div>
 
-          {/* Columna Derecha (5 Cols) - Garzón y Cocina */}
+          {/* Columna Derecha (5 Cols) - Garzón, Cocina y Caja */}
           <div className="lg:col-span-5 grid grid-cols-1 gap-5">
             
             {/* Garzón */}
