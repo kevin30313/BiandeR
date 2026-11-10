@@ -6,6 +6,7 @@ import {
   Activity, 
   Sparkles 
 } from 'lucide-react';
+import { WorkflowPipeline } from '../components/WorkflowPipeline';
 
 // SVGs estilizados estilo Dark Craft / Bistro Modern
 const SmartphoneSVG = () => (
@@ -211,6 +212,9 @@ export const HomeSelector = () => {
           </div>
 
         </div>
+
+        {/* PIPELINE DE FLUJO EN TIEMPO REAL INTEGRADO */}
+        <WorkflowPipeline />
 
       </main>
 
