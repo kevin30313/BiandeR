@@ -102,7 +102,7 @@ export const HomeSelector = () => {
             </span>
           </h1>
           <p className="text-zinc-600 text-base sm:text-lg max-w-xl font-normal leading-relaxed">
-            Selecciona la terminal activa para simular la interacción continua entre comensales, salón, cocina y caja.
+            Selecciona la terminal activa para interactuar con la arquitectura continua entre comensales, salón, cocina y caja.
           </p>
         </div>
 
@@ -135,11 +135,15 @@ export const HomeSelector = () => {
             </div>
 
             <div className="mt-8 pt-6 border-t border-zinc-800/80 flex items-center justify-between">
-              <span className="text-xs font-mono text-zinc-400 group-hover:text-amber-400 transition-colors tracking-wide">
-                [ INICIAR SIMULACIÓN DE CLIENTE ]
-              </span>
-              <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-700 group-hover:bg-amber-500 group-hover:border-amber-400 group-hover:text-black flex items-center justify-center transition-all">
-                <ArrowRight className="w-5 h-5 text-zinc-400 group-hover:text-black group-hover:translate-x-0.5 transition-transform" />
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                <span className="text-xs font-mono text-amber-400 tracking-wide font-medium">
+                  EXPERIENCIA MÓVIL ACTIVA
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-mono text-white bg-amber-500/10 border border-amber-500/30 px-4 py-2 rounded-xl group-hover:bg-amber-500 group-hover:text-black transition-all">
+                <span>Abrir Menú QR</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 text-amber-400 group-hover:text-black" />
               </div>
             </div>
           </div>
