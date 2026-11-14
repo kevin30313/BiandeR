@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProducts, createProduct, createCategory } from '../controllers/product.controller';
+import { getProducts, createProduct, updateProduct, deleteProduct } from '../controllers/product.controller';
 import { authenticateToken, authorizeRoles } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -7,8 +7,8 @@ const router = Router();
 // ✅ Ruta pública: Obtener lista de productos (Cualquier cliente/móvil puede ver la carta)
 router.get('/', getProducts);
 
-// 🔒 Rutas protegidas: Requieren token y rol ADMIN para modificar el menú
-router.post('/category', authenticateToken, authorizeRoles('ADMIN'), createCategory);
+// 🔒 Rutas protegidas (Admin): Crear, actualizar y eliminar productos
 router.post('/', authenticateToken, authorizeRoles('ADMIN'), createProduct);
-
+router.put('/:id', authenticateToken, authorizeRoles('ADMIN'), updateProduct);
+router.delete('/:id', authenticateToken, authorizeRoles('ADMIN'), deleteProduct);
 export default router;

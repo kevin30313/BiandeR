@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getCategories, createCategory } from '../controllers/product.controller';
+import { getCategories, createCategory } from '../controllers/category.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 
 const router = Router();

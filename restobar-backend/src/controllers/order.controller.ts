@@ -4,6 +4,8 @@ import prisma from '../prisma';
 interface OrderItemInput {
   productId: string;
   quantity: number;
+  unitPrice: number;
+  notes?: string;
 }
 
 export const createOrder = async (req: Request, res: Response) => {
@@ -34,6 +36,7 @@ export const createOrder = async (req: Request, res: Response) => {
       orderItemsData.push({
         productId: item.productId,
         quantity: item.quantity,
+        unitPrice: product.price,
       });
     }
 

@@ -1,70 +1,82 @@
 import { Request, Response } from 'express';
-import prisma from '../prisma';
+import { PrismaClient } from '@prisma/client';
 
-export const getProducts = async (_req: Request, res: Response) => {
+const prisma = new PrismaClient();
+
+// Listar todos los productos (para admin y menú del cliente)
+export const getProducts = async (req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       include: { category: true },
-      orderBy: { name: 'asc' },
+      orderBy: { name: 'asc' }
     });
     res.json(products);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al obtener productos' });
+    res.status(500).json({ error: 'Error al obtener los productos' });
   }
 };
 
-// ✅ Nueva función exportada para el menú
-export const getCategories = async (_req: Request, res: Response) => {
-  try {
-    const categories = await prisma.category.findMany({
-      orderBy: { name: 'asc' },
-    });
-    res.json(categories);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al obtener categorías' });
-  }
-};
-
-export const createCategory = async (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    if (!name) {
-      res.status(400).json({ message: 'El nombre de la categoría es requerido' });
-      return;
-    }
-
-    const category = await prisma.category.create({
-      data: { name },
-    });
-    res.status(201).json(category);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al crear la categoría' });
-  }
-};
-
+// Crear un plato/producto nuevo
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, price, categoryId } = req.body;
+    const { name, description, price, image, categoryId, isAvailable } = req.body;
 
     if (!name || price === undefined || !categoryId) {
-      res.status(400).json({ message: 'Faltan campos obligatorios' });
-      return;
+      return res.status(400).json({ error: 'Nombre, precio y categoría son obligatorios' });
     }
 
-    const product = await prisma.product.create({
+   const product = await prisma.product.create({
       data: {
         name,
+        description: description || null,
         price: Number(price),
+        image: image || null,
         categoryId,
+        isAvailable: isAvailable !== undefined ? Boolean(isAvailable) : true
       },
+      include: { category: true }
     });
 
     res.status(201).json(product);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al crear el producto' });
+    res.status(500).json({ error: 'Error al crear el producto' });
+  }
+};
+
+// Actualizar un producto (precio, stock, foto, nombre)
+export const updateProduct = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, description, price, image, categoryId, isAvailable } = req.body;
+
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(price !== undefined && { price: Number(price) }),
+        ...(image !== undefined && { image }),
+        ...(categoryId && { categoryId }),
+        ...(isAvailable !== undefined && { isAvailable })
+      },
+      include: { category: true }
+    });
+
+    res.json(updatedProduct);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar el producto' });
+  }
+};
+
+// Eliminar un producto
+export const deleteProduct = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await prisma.product.delete({
+      where: { id }
+    });
+    res.json({ message: 'Producto eliminado correctamente' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar el producto (puede estar asociado a órdenes previas)' });
   }
 };

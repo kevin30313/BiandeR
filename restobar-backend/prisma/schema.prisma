@@ -1,6 +1,6 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -22,11 +22,13 @@ enum TableStatus {
 }
 
 enum OrderStatus {
-  PENDING
-  IN_PREPARATION
-  READY
-  DELIVERED
-  PAID
+  PENDING_APPROVAL // Creada por el cliente mediante el QR, esperando visto bueno del garzón
+  PENDING          // Aprobada por el garzón, en cola para entrar a cocina
+  IN_PREPARATION   // Cocina la tomó
+  READY            // Lista para retirar
+  DELIVERED        // En mesa
+  PAID             // Pagada en caja
+  CANCELLED        // Rechazada o anulada
 }
 
 enum PaymentMethod {
@@ -54,14 +56,16 @@ model Table {
 
 model Category {
   id       String    @id @default(uuid())
-  name     String
+  name     String    @unique
   products Product[]
 }
 
 model Product {
   id          String      @id @default(uuid())
   name        String
+  description String?     // Descripción del plato o bebida para el menú del cliente
   price       Float
+  image       String?     // URL de la foto del plato
   isAvailable Boolean     @default(true)
   categoryId  String
   category    Category    @relation(fields: [categoryId], references: [id])
@@ -72,7 +76,7 @@ model Order {
   id          String      @id @default(uuid())
   tableId     String
   table       Table       @relation(fields: [tableId], references: [id])
-  status      OrderStatus @default(PENDING)
+  status      OrderStatus @default(PENDING_APPROVAL)
   totalAmount Float       @default(0)
   items       OrderItem[]
   payment     Payment?
@@ -87,6 +91,7 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
+  unitPrice Float   // Precio congelado al momento de realizar la compra
   notes     String?
 }
 
@@ -96,7 +101,7 @@ model Payment {
   order         Order         @relation(fields: [orderId], references: [id])
   amount        Float
   paymentMethod PaymentMethod
-  referenceNum  String?       // Código de autorización/vouchers del POS (opcional)
+  referenceNum  String?       // Código de autorización o voucher del POS
   createdAt     DateTime      @default(now())
 }
 
