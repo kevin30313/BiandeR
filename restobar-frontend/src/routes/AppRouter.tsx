@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import ClientMenu from '../pages/client/ClientMenu';
 import UserManagement from '../pages/admin/UserManagement';
+import AdminProducts from '../pages/admin/AdminProducts';
 import KitchenBoard from '../pages/kitchen/KitchenBoard';
 import { WaiterOrders } from '../pages/waiter/WaiterOrders';
 import CashierBoard from '../pages/cashier/CashierBoard';
@@ -88,6 +89,14 @@ export const AppRouter = () => (
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/products"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AdminProducts />
+          </ProtectedRoute>
+        }
+        />
 
       {/* Redirección por defecto ante rutas desconocidas */}
       <Route path="*" element={<Navigate to="/" replace />} />
