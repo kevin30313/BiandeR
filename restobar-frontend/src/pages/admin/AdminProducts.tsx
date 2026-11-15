@@ -24,7 +24,7 @@ export const AdminProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Estados del formulario (Crear / Editar)
+  // Estados del formulario
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -35,7 +35,6 @@ export const AdminProducts = () => {
   const [isAvailable, setIsAvailable] = useState(true);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-
   const token = localStorage.getItem('token');
 
   const fetchData = async () => {
@@ -64,6 +63,18 @@ export const AdminProducts = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Manejar la subida de imagen local y convertirla a Base64
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,37 +162,73 @@ export const AdminProducts = () => {
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Nombre:</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre:</label>
+            <input 
+              type="text" 
+              value={name} 
+              onChange={e => setName(e.target.value)} 
+              required 
+              placeholder="Ej. Chorrillana Familiar"
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} 
+            />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Precio ($):</label>
-            <input type="number" value={price} onChange={e => setPrice(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Precio ($):</label>
+            <input 
+              type="number" 
+              value={price} 
+              onChange={e => setPrice(e.target.value)} 
+              required 
+              placeholder="Ej. 8500"
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} 
+            />
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Categoría:</label>
-            <select value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ width: '100%', padding: '8px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Categoría:</label>
+            <select 
+              value={categoryId} 
+              onChange={e => setCategoryId(e.target.value)} 
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+            >
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>URL de Imagen:</label>
-            <input type="text" value={image} onChange={e => setImage(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '8px' }} />
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Subir Imagen desde el Dispositivo:</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleImageChange} 
+              style={{ width: '100%', padding: '5px', boxSizing: 'border-box' }} 
+            />
           </div>
         </div>
 
+        {/* Vista previa de la imagen cargada */}
+        {image && (
+          <div style={{ marginBottom: '15px' }}>
+            <span style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '5px' }}>Vista previa de la imagen:</span>
+            <img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }} />
+          </div>
+        )}
+
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Descripción:</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} style={{ width: '100%', padding: '8px' }} />
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Descripción:</label>
+          <textarea 
+            value={description} 
+            onChange={e => setDescription(e.target.value)} 
+            placeholder="Ingredientes, porción, detalles..."
+            style={{ width: '100%', padding: '8px', height: '60px', boxSizing: 'border-box' }} 
+          />
         </div>
 
         <div style={{ marginBottom: '15px' }}>
-          <label>
+          <label style={{ cursor: 'pointer' }}>
             <input type="checkbox" checked={isAvailable} onChange={e => setIsAvailable(e.target.checked)} /> Disponible en el menú
           </label>
         </div>
@@ -190,7 +237,7 @@ export const AdminProducts = () => {
           {isEditing ? 'Actualizar Producto' : 'Guardar Producto'}
         </button>
         {isEditing && (
-          <button type="button" onClick={resetForm} style={{ marginLeft: '10px', padding: '10px 20px', cursor: 'pointer' }}>
+          <button type="button" onClick={resetForm} style={{ marginLeft: '10px', padding: '10px 20px', cursor: 'pointer', borderRadius: '4px', border: '1px solid #ccc' }}>
             Cancelar
           </button>
         )}
