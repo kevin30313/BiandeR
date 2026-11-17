@@ -13,7 +13,7 @@ interface Product {
   price: number;
   image?: string;
   categoryId: string;
-  category: Category;
+  category?: Category;
   isAvailable: boolean;
 }
 
@@ -40,6 +40,8 @@ export const AdminProducts = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError('');
+      
       const [prodRes, catRes] = await Promise.all([
         fetch(`${API_URL}/products`),
         fetch(`${API_URL}/categories`)
@@ -48,13 +50,18 @@ export const AdminProducts = () => {
       const prodData = await prodRes.json();
       const catData = await catRes.json();
 
-      setProducts(prodData);
-      setCategories(catData);
-      if (catData.length > 0 && !categoryId) {
+      // Blindaje: Nos aseguramos de que siempre sean arrays antes de guardarlos
+      setProducts(Array.isArray(prodData) ? prodData : []);
+      setCategories(Array.isArray(catData) ? catData : []);
+
+      if (Array.isArray(catData) && catData.length > 0 && !categoryId) {
         setCategoryId(catData[0].id);
       }
     } catch (err) {
+      console.error("Error al cargar datos:", err);
       setError('Error al cargar los datos del servidor');
+      setProducts([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -90,8 +97,6 @@ export const AdminProducts = () => {
         isAvailable
       };
 
-      console.log('Enviando producto:', bodyData);
-
       const res = await fetch(endpoint, {
         method,
         headers: {
@@ -101,10 +106,14 @@ export const AdminProducts = () => {
         body: JSON.stringify(bodyData)
       });
 
-      if (!res.ok) throw new Error('Error al guardar el producto');
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || 'Error al guardar el producto');
+      }
 
       resetForm();
       fetchData();
+      alert(isEditing ? '¡Producto actualizado con éxito!' : '¡Producto creado con éxito!');
     } catch (err: any) {
       alert(err.message);
     }
@@ -157,7 +166,7 @@ export const AdminProducts = () => {
 
       <h1>Gestión de Productos y Menú</h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p style={{ color: 'red', fontWeight: 'bold' }}>{error}</p>}
 
       {/* Formulario */}
       <form onSubmit={handleSubmit} style={{ background: '#f9f9f9', padding: '20px', borderRadius: '8px', marginBottom: '30px', border: '1px solid #ddd' }}>
@@ -196,7 +205,8 @@ export const AdminProducts = () => {
               onChange={e => setCategoryId(e.target.value)} 
               style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
             >
-              {categories.map(cat => (
+              {/* Blindaje en el select de categorías */}
+              {Array.isArray(categories) && categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
@@ -263,27 +273,36 @@ export const AdminProducts = () => {
             </tr>
           </thead>
           <tbody>
-            {products.map(product => (
-              <tr key={product.id}>
-                <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  {product.image ? (
-                    <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-                  ) : (
-                    'Sin foto'
-                  )}
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{product.name}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{product.category?.name}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>${product.price.toLocaleString()}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                  {product.isAvailable ? '✅ Disponible' : '❌ Oculto'}
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                  <button onClick={() => handleEdit(product)} style={{ marginRight: '5px', padding: '5px 10px', cursor: 'pointer' }}>Editar</button>
-                  <button onClick={() => handleDelete(product.id)} style={{ padding: '5px 10px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Eliminar</button>
+            {/* Blindaje estricto: Asegura que products sea un array antes de hacer map */}
+            {Array.isArray(products) && products.length > 0 ? (
+              products.map(product => (
+                <tr key={product.id}>
+                  <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                    ) : (
+                      'Sin foto'
+                    )}
+                  </td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>{product.name}</td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>{product.category?.name || 'Sin categoría'}</td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>${Number(product.price).toLocaleString()}</td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    {product.isAvailable ? '✅ Disponible' : '❌ Oculto'}
+                  </td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    <button onClick={() => handleEdit(product)} style={{ marginRight: '5px', padding: '5px 10px', cursor: 'pointer' }}>Editar</button>
+                    <button onClick={() => handleDelete(product.id)} style={{ padding: '5px 10px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Eliminar</button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                  No hay productos registrados en el sistema.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       )}
