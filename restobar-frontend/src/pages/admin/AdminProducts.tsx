@@ -81,6 +81,16 @@ export const AdminProducts = () => {
     try {
       const endpoint = isEditing ? `${API_URL}/products/${currentId}` : `${API_URL}/products`;
       const method = isEditing ? 'PUT' : 'POST';
+      const bodyData = {
+        name,
+        description,
+        price: Number(price),
+        image,
+        categoryId,
+        isAvailable
+      };
+
+      console.log('Enviando producto:', bodyData);
 
       const res = await fetch(endpoint, {
         method,
@@ -88,14 +98,7 @@ export const AdminProducts = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          name,
-          description,
-          price: Number(price),
-          image,
-          categoryId,
-          isAvailable
-        })
+        body: JSON.stringify(bodyData)
       });
 
       if (!res.ok) throw new Error('Error al guardar el producto');
