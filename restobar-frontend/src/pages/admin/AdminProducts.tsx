@@ -41,10 +41,10 @@ export const AdminProducts = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       const [prodRes, catRes] = await Promise.all([
         fetch(`${API_URL}/products`),
-        fetch(`${API_URL}/categories`)
+        fetch(`${API_URL}/categories`),
       ]);
 
       const prodData = await prodRes.json();
@@ -58,7 +58,7 @@ export const AdminProducts = () => {
         setCategoryId(catData[0].id);
       }
     } catch (err) {
-      console.error("Error al cargar datos:", err);
+      console.error('Error al cargar datos:', err);
       setError('Error al cargar los datos del servidor');
       setProducts([]);
       setCategories([]);
@@ -85,37 +85,52 @@ export const AdminProducts = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!categoryId) {
+      alert('Selecciona una categoría válida antes de guardar (revisa si cargaron las categorías).');
+      return;
+    }
+
+    const numericPrice = Number(price);
+    if (Number.isNaN(numericPrice) || numericPrice <= 0) {
+      alert('Ingresa un precio válido mayor a 0.');
+      return;
+    }
+
     try {
       const endpoint = isEditing ? `${API_URL}/products/${currentId}` : `${API_URL}/products`;
       const method = isEditing ? 'PUT' : 'POST';
       const bodyData = {
-        name,
-        description,
-        price: Number(price),
-        image,
+        name: name.trim(),
+        description: description.trim(),
+        price: numericPrice,
+        image: image || undefined,
         categoryId,
-        isAvailable
+        isAvailable,
       };
 
       const res = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(bodyData)
+        body: JSON.stringify(bodyData),
       });
 
       if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.message || 'Error al guardar el producto');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(
+          errData.message || errData.error || `Error ${res.status} al guardar el producto`
+        );
       }
 
       resetForm();
       fetchData();
       alert(isEditing ? '¡Producto actualizado con éxito!' : '¡Producto creado con éxito!');
     } catch (err: any) {
-      alert(err.message);
+      console.error('Detalle del error:', err);
+      alert(err.message || 'Error al guardar el producto');
     }
   };
 
@@ -135,7 +150,7 @@ export const AdminProducts = () => {
     try {
       const res = await fetch(`${API_URL}/products/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('No se pudo eliminar');
       fetchData();
@@ -157,7 +172,7 @@ export const AdminProducts = () => {
 
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '1000px', margin: '0 auto' }}>
-      <button 
+      <button
         onClick={() => navigate('/admin')}
         style={{ marginBottom: '20px', padding: '8px 14px', cursor: 'pointer' }}
       >
@@ -169,30 +184,39 @@ export const AdminProducts = () => {
       {error && <p style={{ color: 'red', fontWeight: 'bold' }}>{error}</p>}
 
       {/* Formulario */}
-      <form onSubmit={handleSubmit} style={{ background: '#f9f9f9', padding: '20px', borderRadius: '8px', marginBottom: '30px', border: '1px solid #ddd' }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          background: '#f9f9f9',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '30px',
+          border: '1px solid #ddd',
+        }}
+      >
         <h3>{isEditing ? 'Editar Producto' : 'Crear Nuevo Plato / Producto'}</h3>
-        
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre:</label>
-            <input 
-              type="text" 
-              value={name} 
-              onChange={e => setName(e.target.value)} 
-              required 
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
               placeholder="Ej. Chorrillana Familiar"
-              style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} 
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
             />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Precio ($):</label>
-            <input 
-              type="number" 
-              value={price} 
-              onChange={e => setPrice(e.target.value)} 
-              required 
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              required
               placeholder="Ej. 8500"
-              style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} 
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
             />
           </div>
         </div>
@@ -200,24 +224,29 @@ export const AdminProducts = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Categoría:</label>
-            <select 
-              value={categoryId} 
-              onChange={e => setCategoryId(e.target.value)} 
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
               style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
             >
               {/* Blindaje en el select de categorías */}
-              {Array.isArray(categories) && categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
+              {Array.isArray(categories) &&
+                categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Subir Imagen desde el Dispositivo:</label>
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={handleImageChange} 
-              style={{ width: '100%', padding: '5px', boxSizing: 'border-box' }} 
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              Subir Imagen desde el Dispositivo:
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              style={{ width: '100%', padding: '5px', boxSizing: 'border-box' }}
             />
           </div>
         </div>
@@ -225,32 +254,64 @@ export const AdminProducts = () => {
         {/* Vista previa de la imagen cargada */}
         {image && (
           <div style={{ marginBottom: '15px' }}>
-            <span style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '5px' }}>Vista previa de la imagen:</span>
-            <img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }} />
+            <span style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '5px' }}>
+              Vista previa de la imagen:
+            </span>
+            <img
+              src={image}
+              alt="Preview"
+              style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
           </div>
         )}
 
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Descripción:</label>
-          <textarea 
-            value={description} 
-            onChange={e => setDescription(e.target.value)} 
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="Ingredientes, porción, detalles..."
-            style={{ width: '100%', padding: '8px', height: '60px', boxSizing: 'border-box' }} 
+            style={{ width: '100%', padding: '8px', height: '60px', boxSizing: 'border-box' }}
           />
         </div>
 
         <div style={{ marginBottom: '15px' }}>
           <label style={{ cursor: 'pointer' }}>
-            <input type="checkbox" checked={isAvailable} onChange={e => setIsAvailable(e.target.checked)} /> Disponible en el menú
+            <input
+              type="checkbox"
+              checked={isAvailable}
+              onChange={(e) => setIsAvailable(e.target.checked)}
+            />{' '}
+            Disponible en el menú
           </label>
         </div>
 
-        <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+        <button
+          type="submit"
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#16a34a',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
           {isEditing ? 'Actualizar Producto' : 'Guardar Producto'}
         </button>
         {isEditing && (
-          <button type="button" onClick={resetForm} style={{ marginLeft: '10px', padding: '10px 20px', cursor: 'pointer', borderRadius: '4px', border: '1px solid #ccc' }}>
+          <button
+            type="button"
+            onClick={resetForm}
+            style={{
+              marginLeft: '10px',
+              padding: '10px 20px',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+            }}
+          >
             Cancelar
           </button>
         )}
@@ -275,24 +336,49 @@ export const AdminProducts = () => {
           <tbody>
             {/* Blindaje estricto: Asegura que products sea un array antes de hacer map */}
             {Array.isArray(products) && products.length > 0 ? (
-              products.map(product => (
+              products.map((product) => (
                 <tr key={product.id}>
                   <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                     {product.image ? (
-                      <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+                      />
                     ) : (
                       'Sin foto'
                     )}
                   </td>
                   <td style={{ padding: '10px', border: '1px solid #ddd' }}>{product.name}</td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>{product.category?.name || 'Sin categoría'}</td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>${Number(product.price).toLocaleString()}</td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    {product.category?.name || 'Sin categoría'}
+                  </td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    ${Number(product.price).toLocaleString()}
+                  </td>
                   <td style={{ padding: '10px', border: '1px solid #ddd' }}>
                     {product.isAvailable ? '✅ Disponible' : '❌ Oculto'}
                   </td>
                   <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                    <button onClick={() => handleEdit(product)} style={{ marginRight: '5px', padding: '5px 10px', cursor: 'pointer' }}>Editar</button>
-                    <button onClick={() => handleDelete(product.id)} style={{ padding: '5px 10px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Eliminar</button>
+                    <button
+                      onClick={() => handleEdit(product)}
+                      style={{ marginRight: '5px', padding: '5px 10px', cursor: 'pointer' }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      style={{
+                        padding: '5px 10px',
+                        backgroundColor: '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Eliminar
+                    </button>
                   </td>
                 </tr>
               ))
