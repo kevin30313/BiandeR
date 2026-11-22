@@ -11,6 +11,7 @@ export const getCategories = async (req: Request, res: Response) => {
     });
     res.json(categories);
   } catch (error) {
+    console.error('Error getCategories:', error);
     res.status(500).json({ error: 'Error al obtener las categorías' });
   }
 };
