@@ -10,14 +10,9 @@ export const getCategories = async (req: Request, res: Response) => {
       include: { products: true }
     });
     res.json(categories);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error getCategories:', error);
-    res.status(500).json({
-      error: 'Error al obtener las categorías',
-      details: error?.message || String(error),
-      code: error?.code
-    });
-  
+    res.status(500).json({ error: 'Error al obtener las categorías' });
   }
 };
 
