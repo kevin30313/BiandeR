@@ -24,7 +24,12 @@ export const AdminProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Estados del formulario
+  // Estados para crear categoría desde el panel del admin
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [categoryFeedback, setCategoryFeedback] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  // Estados del formulario de producto
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -35,7 +40,8 @@ export const AdminProducts = () => {
   const [isAvailable, setIsAvailable] = useState(true);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-  const token = localStorage.getItem('token');
+
+  const getAuthToken = () => localStorage.getItem('token');
 
   const fetchData = async () => {
     try {
@@ -50,12 +56,18 @@ export const AdminProducts = () => {
       const prodData = await prodRes.json();
       const catData = await catRes.json();
 
-      // Blindaje: Nos aseguramos de que siempre sean arrays antes de guardarlos
       setProducts(Array.isArray(prodData) ? prodData : []);
-      setCategories(Array.isArray(catData) ? catData : []);
 
-      if (Array.isArray(catData) && catData.length > 0 && !categoryId) {
-        setCategoryId(catData[0].id);
+      if (Array.isArray(catData)) {
+        setCategories(catData);
+        if (catData.length > 0) {
+          setCategoryId((prev) => prev || catData[0].id);
+        } else {
+          setCategoryId('');
+        }
+      } else {
+        setCategories([]);
+        setCategoryId('');
       }
     } catch (err) {
       console.error('Error al cargar datos:', err);
@@ -70,6 +82,46 @@ export const AdminProducts = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+
+    const token = getAuthToken();
+    if (!token) {
+      setCategoryFeedback({ type: 'err', text: 'Sesión no encontrada. Inicia sesión como admin.' });
+      return;
+    }
+
+    try {
+      setCreatingCategory(true);
+      setCategoryFeedback(null);
+
+      const res = await fetch(`${API_URL}/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: trimmed }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || data.message || `Error ${res.status} al crear la categoría`);
+      }
+
+      setCategories((prev) => [...prev, data]);
+      setCategoryId(data.id);
+      setNewCategoryName('');
+      setCategoryFeedback({ type: 'ok', text: `Categoría "${data.name}" creada y seleccionada.` });
+    } catch (err: any) {
+      setCategoryFeedback({ type: 'err', text: err.message || 'No se pudo crear la categoría' });
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
 
   // Manejar la subida de imagen local y convertirla a Base64
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +139,7 @@ export const AdminProducts = () => {
     e.preventDefault();
 
     if (!categoryId) {
-      alert('Selecciona una categoría válida antes de guardar (revisa si cargaron las categorías).');
+      alert('Crea o selecciona una categoría válida antes de guardar.');
       return;
     }
 
@@ -96,6 +148,8 @@ export const AdminProducts = () => {
       alert('Ingresa un precio válido mayor a 0.');
       return;
     }
+
+    const token = getAuthToken();
 
     try {
       const endpoint = isEditing ? `${API_URL}/products/${currentId}` : `${API_URL}/products`;
@@ -147,6 +201,7 @@ export const AdminProducts = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+    const token = getAuthToken();
     try {
       const res = await fetch(`${API_URL}/products/${id}`, {
         method: 'DELETE',
@@ -183,7 +238,57 @@ export const AdminProducts = () => {
 
       {error && <p style={{ color: 'red', fontWeight: 'bold' }}>{error}</p>}
 
-      {/* Formulario */}
+      {/* Crear Nueva Categoría */}
+      <div
+        style={{
+          background: '#f3f6fa',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          border: '1px solid #d0d7de',
+        }}
+      >
+        <h3 style={{ marginTop: 0, marginBottom: '10px' }}>Nueva Categoría del Restaurante</h3>
+        <form onSubmit={handleCreateCategory} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            placeholder="Ej. Comidas, Pizzas, Coctelería..."
+            style={{ flex: '1 1 240px', padding: '8px', boxSizing: 'border-box' }}
+          />
+          <button
+            type="submit"
+            disabled={creatingCategory || !newCategoryName.trim()}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: creatingCategory ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold',
+              opacity: creatingCategory || !newCategoryName.trim() ? 0.6 : 1,
+            }}
+          >
+            {creatingCategory ? 'Creando...' : '+ Crear Categoría'}
+          </button>
+        </form>
+        {categoryFeedback && (
+          <p
+            style={{
+              marginTop: '8px',
+              marginBottom: 0,
+              fontSize: '14px',
+              color: categoryFeedback.type === 'ok' ? '#15803d' : '#dc2626',
+            }}
+          >
+            {categoryFeedback.text}
+          </p>
+        )}
+      </div>
+
+      {/* Formulario de Producto */}
       <form
         onSubmit={handleSubmit}
         style={{
@@ -229,13 +334,15 @@ export const AdminProducts = () => {
               onChange={(e) => setCategoryId(e.target.value)}
               style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
             >
-              {/* Blindaje en el select de categorías */}
-              {Array.isArray(categories) &&
+              {categories.length === 0 ? (
+                <option value="">Crea una categoría arriba primero</option>
+              ) : (
                 categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
-                ))}
+                ))
+              )}
             </select>
           </div>
           <div>
@@ -334,7 +441,6 @@ export const AdminProducts = () => {
             </tr>
           </thead>
           <tbody>
-            {/* Blindaje estricto: Asegura que products sea un array antes de hacer map */}
             {Array.isArray(products) && products.length > 0 ? (
               products.map((product) => (
                 <tr key={product.id}>
