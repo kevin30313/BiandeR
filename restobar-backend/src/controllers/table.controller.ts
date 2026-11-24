@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
 
 export const getTables = async (_req: Request, res: Response) => {
@@ -30,6 +31,26 @@ export const createTable = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'No se pudo crear la mesa. Verifica que el número no exista.' });
+  }
+};
+
+export const deleteTable = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    await prisma.table.delete({ where: { id } });
+    return res.status(200).json({ message: 'Mesa eliminada correctamente' });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return res.status(404).json({ message: 'No se encontró la mesa solicitada' });
+      }
+      if (error.code === 'P2003') {
+        return res.status(409).json({ message: 'No se puede eliminar esta mesa porque tiene pedidos o preórdenes asociados' });
+      }
+    }
+
+    console.error('Error al eliminar mesa:', error);
+    return res.status(500).json({ message: 'Error al eliminar la mesa' });
   }
 };
 

@@ -8,6 +8,7 @@ import KitchenBoard from '../pages/kitchen/KitchenBoard';
 import { WaiterOrders } from '../pages/waiter/WaiterOrders';
 import CashierBoard from '../pages/cashier/CashierBoard';
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import AdminTablesQr from '../pages/admin/AdminTablesQr';
 import Login from '../pages/Login';
 import HomeSelector from '../pages/HomeSelector'; // <--- 1. Nuevo import
 
@@ -77,6 +78,15 @@ export const AppRouter = () => (
         element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/qr"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AdminTablesQr />
           </ProtectedRoute>
         }
       />
