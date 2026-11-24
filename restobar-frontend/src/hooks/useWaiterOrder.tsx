@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../api/axiosInstance';
 
 export interface Category { id: string; name: string; }
-export interface Product { id: string; name: string; price: number; categoryId: string; }
+export interface Product { id: string; name: string; description?: string; price: number; image?: string; categoryId: string; isAvailable?: boolean; }
 export interface Table { id: string; number: number; status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED'; }
 export interface CartItem { product: Product; quantity: number; notes: string; }
 
