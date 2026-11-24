@@ -76,6 +76,7 @@ const createOrderWithStatus = async (req: Request, res: Response, status: 'PENDI
       if (status === 'PENDING_APPROVAL') {
         io.to('role:WAITER').emit('order:preorder_created', order);
       } else {
+        io.to('role:WAITER').emit('order:status_updated', order);
         io.to('role:KITCHEN').emit('order:created', order);
         io.to('role:CASHIER').emit('order:created', order);
       }
@@ -162,7 +163,7 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const updateOrderStatus = async (req: Request, res: Response) => {
+export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
     const { status } = req.body;
@@ -177,9 +178,35 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Las preórdenes deben aprobarse o rechazarse desde la bandeja del garzón' });
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id },
+    const allowedTransitions: Record<string, string[]> = {
+      PENDING: ['IN_PREPARATION'],
+      IN_PREPARATION: ['READY'],
+      READY: ['DELIVERED'],
+    };
+    if (!allowedTransitions[current.status]?.includes(status)) {
+      return res.status(400).json({ message: `No se permite cambiar de ${current.status} a ${status}` });
+    }
+
+    if (status === 'IN_PREPARATION' && !['KITCHEN', 'ADMIN'].includes(req.user?.role || '')) {
+      return res.status(403).json({ message: 'Solo cocina puede iniciar la preparación' });
+    }
+    if (status === 'READY' && !['KITCHEN', 'ADMIN'].includes(req.user?.role || '')) {
+      return res.status(403).json({ message: 'Solo cocina puede marcar la orden como lista' });
+    }
+    if (status === 'DELIVERED' && !['WAITER', 'ADMIN'].includes(req.user?.role || '')) {
+      return res.status(403).json({ message: 'Solo el garzón puede marcar la orden como entregada' });
+    }
+
+    const transition = await prisma.order.updateMany({
+      where: { id, status: current.status },
       data: { status },
+    });
+    if (transition.count === 0) {
+      return res.status(409).json({ message: 'La orden cambió de estado. Actualiza la bandeja e inténtalo otra vez.' });
+    }
+
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id },
       include: {
         items: {
           include: { product: true },
@@ -187,12 +214,25 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         table: true,
       },
     });
+    if (!updatedOrder) return res.status(404).json({ message: 'Orden no encontrada' });
 
     const io = req.app.get('io');
-    if (io && updatedOrder.status !== 'PENDING_APPROVAL') {
+    if (io) {
       io.to('role:WAITER').emit('order:status_updated', updatedOrder);
       io.to('role:KITCHEN').emit('order:status_updated', updatedOrder);
       io.to('role:CASHIER').emit('order:status_updated', updatedOrder);
+      if (updatedOrder.status === 'READY') {
+        io.to('role:WAITER').emit('order:ready', {
+          order: updatedOrder,
+          tableNumber: updatedOrder.table.number,
+          items: updatedOrder.items.map((item) => ({
+            id: item.id,
+            name: item.product.name,
+            quantity: item.quantity,
+          })),
+          readyAt: updatedOrder.updatedAt,
+        });
+      }
     }
 
     return res.json(updatedOrder);
