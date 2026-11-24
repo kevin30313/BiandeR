@@ -5,6 +5,8 @@ import type { Category, Product, CartItem } from '../../hooks/useWaiterOrder';
 
 export const ClientMenu = () => {
   const { tableId } = useParams<{ tableId: string }>();
+  const selectedTable = tableId || '1';
+  const isDemoTable = !tableId;
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -62,12 +64,12 @@ export const ClientMenu = () => {
   };
 
   const handleClientOrder = async () => {
-    if (!tableId || cart.length === 0) return;
+    if (cart.length === 0) return;
 
     try {
       setSubmitting(true);
       await api.post('/orders', {
-        tableId,
+        tableId: selectedTable,
         items: cart.map((item) => ({
           productId: item.product.id,
           quantity: item.quantity,
@@ -228,10 +230,10 @@ export const ClientMenu = () => {
       {/* Encabezado */}
       <header style={{ marginBottom: '12px' }}>
         <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>
-          Menú Digital — Mesa #{tableId}
+          Menú Digital — Mesa #{selectedTable}
         </h2>
         <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#6b7280' }}>
-          Desliza por la carta o elige una categoría para ir directo.
+          {isDemoTable ? 'Vista demo en Mesa #1. ' : ''}Desliza por la carta o elige una categoría para ir directo.
         </p>
       </header>
 

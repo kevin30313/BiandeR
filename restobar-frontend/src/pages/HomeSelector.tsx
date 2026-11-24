@@ -112,7 +112,7 @@ export const HomeSelector = () => {
           
           {/* Módulo Cliente - TARJETA PRINCIPAL NEGRA DESTACADA (7 cols en escritorio) */}
           <div
-            onClick={() => navigate('/menu/1')}
+            onClick={() => navigate('/menu')}
             className="lg:col-span-7 group relative p-6 sm:p-8 bg-[#09090B] text-white border border-zinc-800 rounded-3xl cursor-pointer transition-all duration-300 hover:border-amber-500/60 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] flex flex-col justify-between overflow-hidden min-h-[280px]"
           >
             <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/20 transition-all pointer-events-none"></div>
@@ -123,15 +123,15 @@ export const HomeSelector = () => {
                   <SmartphoneSVG />
                 </div>
                 <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-mono font-bold tracking-widest uppercase">
-                  EXPERIENCIA QR
+                  DEMO · MESA #1
                 </span>
               </div>
               
               <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white mb-3 group-hover:text-amber-400 transition-colors">
-                Menú Pre-Orden Digital (Mesa #1)
+                Demo del Menú QR (Mesa #1)
               </h2>
               <p className="text-zinc-400 text-sm leading-relaxed max-w-md font-light">
-                Interfaz optimizada para smartphones. Permite al comensal armar su pedido en tiempo real reduciendo tiempos de espera en salón.
+                Vista de prueba. Si envías una preorden desde aquí, quedará asociada a Mesa #1. Los QR de las mesas reales se generan desde Administración.
               </p>
             </div>
 
@@ -139,11 +139,11 @@ export const HomeSelector = () => {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
                 <span className="text-xs font-mono text-amber-400 tracking-wide font-medium">
-                  EXPERIENCIA MÓVIL ACTIVA
+                  VISTA DEMO ACTIVA · MESA #1
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs font-mono text-white bg-amber-500/10 border border-amber-500/30 px-4 py-2 rounded-xl group-hover:bg-amber-500 group-hover:text-black transition-all">
-                <span>Abrir Menú QR</span>
+                <span>Probar Menú</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 text-amber-400 group-hover:text-black" />
               </div>
             </div>

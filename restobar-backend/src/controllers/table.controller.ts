@@ -16,20 +16,20 @@ export const getTables = async (_req: Request, res: Response) => {
 export const createTable = async (req: Request, res: Response) => {
   try {
     const { number } = req.body;
+    const tableNumber = Number(number);
 
-    if (!number) {
-      res.status(400).json({ message: 'El número de mesa es requerido' });
-      return;
+    if (!Number.isInteger(tableNumber) || tableNumber < 1) {
+      return res.status(400).json({ message: 'El número de mesa debe ser un entero mayor que cero' });
     }
 
     const newTable = await prisma.table.create({
-      data: { number: Number(number) },
+      data: { number: tableNumber },
     });
 
-    res.status(201).json(newTable);
+    return res.status(201).json(newTable);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error al crear la mesa' });
+    return res.status(500).json({ message: 'No se pudo crear la mesa. Verifica que el número no exista.' });
   }
 };
 
