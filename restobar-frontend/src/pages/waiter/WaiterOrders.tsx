@@ -1,5 +1,16 @@
+import { useCallback, useEffect, useState } from 'react';
+import api from '../../api/axiosInstance';
 import { useWaiterOrder } from '../../hooks/useWaiterOrder';
 import { useSocketContext } from '../../context/SocketContext';
+
+interface Preorder {
+  id: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  table: { number: number };
+  items: { id: string; quantity: number; notes?: string; product: { name: string } }[];
+}
 
 export const WaiterOrders = () => {
   const {
@@ -22,7 +33,41 @@ export const WaiterOrders = () => {
     submitOrder,
   } = useWaiterOrder();
 
-  const { isConnected } = useSocketContext();
+  const { isConnected, socket } = useSocketContext();
+  const [preorders, setPreorders] = useState<Preorder[]>([]);
+  const [activeTab, setActiveTab] = useState<'manual' | 'preorders'>('manual');
+
+  const loadPreorders = useCallback(async () => {
+    try {
+      const response = await api.get('/orders');
+      setPreorders(response.data.filter((order: Preorder) => order.status === 'PENDING_APPROVAL'));
+    } catch (error) {
+      console.error('Error cargando preórdenes:', error);
+    }
+  }, []);
+
+  useEffect(() => { void loadPreorders(); }, [loadPreorders]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onCreated = (order: Preorder) => setPreorders((current) => [order, ...current.filter((item) => item.id !== order.id)]);
+    const onUpdated = (order: Preorder) => setPreorders((current) => current.filter((item) => item.id !== order.id));
+    socket.on('order:preorder_created', onCreated);
+    socket.on('order:status_updated', onUpdated);
+    return () => {
+      socket.off('order:preorder_created', onCreated);
+      socket.off('order:status_updated', onUpdated);
+    };
+  }, [socket]);
+
+  const updatePreorder = async (id: string, action: 'approve' | 'reject') => {
+    try {
+      await api.patch(`/orders/${id}/${action}`);
+      setPreorders((current) => current.filter((order) => order.id !== id));
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'No se pudo actualizar la preorden');
+    }
+  };
 
   if (loading) return <div style={{ padding: '20px' }}>Cargando catálogo...</div>;
 
@@ -33,6 +78,30 @@ export const WaiterOrders = () => {
         <span>Red: {isConnected ? '🟢 Online' : '🔴 Offline'}</span>
       </header>
 
+      <nav style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+        <button onClick={() => setActiveTab('manual')} aria-pressed={activeTab === 'manual'}>Tomar pedido</button>
+        <button onClick={() => setActiveTab('preorders')} aria-pressed={activeTab === 'preorders'}>
+          Preórdenes pendientes ({preorders.length})
+        </button>
+      </nav>
+
+      {activeTab === 'preorders' ? (
+        <section>
+          <h2>Preórdenes esperando aprobación</h2>
+          {preorders.length === 0 ? <p>No hay preórdenes pendientes.</p> : preorders.map((order) => (
+            <article key={order.id} style={{ border: '1px solid #ccc', borderRadius: 8, padding: 16, marginBottom: 12 }}>
+              <h3>Mesa #{order.table.number}</h3>
+              <p>{new Date(order.createdAt).toLocaleString()} · Total: ${Number(order.totalAmount).toLocaleString()}</p>
+              <ul>{order.items.map((item) => <li key={item.id}>{item.quantity}× {item.product.name}{item.notes ? ` — ${item.notes}` : ''}</li>)}</ul>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => void updatePreorder(order.id, 'approve')}>Aprobar y enviar a cocina</button>
+                <button onClick={() => void updatePreorder(order.id, 'reject')}>Rechazar</button>
+              </div>
+            </article>
+          ))}
+        </section>
+      ) : (
+      <>
       {message && (
         <div style={{ padding: '10px', marginBottom: '15px', backgroundColor: message.type === 'success' ? '#d4edda' : '#f8d7da' }}>
           {message.text}
@@ -135,6 +204,8 @@ export const WaiterOrders = () => {
           </button>
         </section>
       </div>
+      </>
+      )}
     </div>
   );
 };

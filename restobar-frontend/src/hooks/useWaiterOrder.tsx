@@ -91,7 +91,7 @@ export const useWaiterOrder = () => {
     try {
       setSubmitting(true);
       setMessage(null);
-      await api.post('/orders', {
+      await api.post('/orders/manual', {
         tableId: selectedTableId,
         items: cart.map((item) => ({
           productId: item.product.id,
@@ -99,7 +99,7 @@ export const useWaiterOrder = () => {
           notes: item.notes,
         })),
       });
-      setMessage({ type: 'success', text: 'Comanda enviada a cocina con éxito' });
+      setMessage({ type: 'success', text: 'Comanda enviada a cocina y caja' });
       setCart([]);
       setSelectedTableId('');
     } catch (err: any) {

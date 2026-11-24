@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { 
-  createOrder, 
+  createPublicPreorder,
+  createWaiterOrder,
+  approvePreorder,
+  rejectPreorder,
   getOrders, 
   updateOrderStatus, 
   payOrder 
@@ -10,10 +13,14 @@ import { authenticateToken, authorizeRoles } from '../middlewares/auth.middlewar
 const router = Router();
 
 // ✅ PÚBLICO: Los clientes de las mesas pueden crear pedidos sin token
-router.post('/', createOrder);
+router.post('/', createPublicPreorder);
 
 // 🔒 RUTAS PROTEGIDAS: Requieren autenticación con JWT
 router.get('/', authenticateToken, getOrders);
+
+router.post('/manual', authenticateToken, authorizeRoles('WAITER', 'ADMIN'), createWaiterOrder);
+router.patch('/:id/approve', authenticateToken, authorizeRoles('WAITER', 'ADMIN'), approvePreorder);
+router.patch('/:id/reject', authenticateToken, authorizeRoles('WAITER', 'ADMIN'), rejectPreorder);
 
 router.patch(
   '/:id/status', 

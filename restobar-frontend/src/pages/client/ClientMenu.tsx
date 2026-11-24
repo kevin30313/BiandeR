@@ -121,9 +121,9 @@ export const ClientMenu = () => {
           borderRadius: '14px',
         }}
       >
-        <h2 style={{ marginTop: 0, color: '#111827' }}>🎉 ¡Pedido Enviado!</h2>
+        <h2 style={{ marginTop: 0, color: '#111827' }}>🎉 ¡Preorden enviada!</h2>
         <p style={{ color: '#4b5563', lineHeight: 1.5 }}>
-          Tu orden ha sido enviada a la cocina. Te avisaremos cuando esté lista.
+          El garzón recibió tu pedido y lo revisará antes de enviarlo a cocina. La preparación comenzará cuando lo apruebe.
         </p>
         <button
           onClick={() => setOrderSent(false)}

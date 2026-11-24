@@ -48,7 +48,9 @@ export const KitchenBoard: React.FC = () => {
 
     // Recibir nuevas comandas
     socket.on('order:created', (newOrder: Order) => {
-      setOrders((prev) => [newOrder, ...prev]);
+      if (['PENDING', 'IN_PREPARATION'].includes(newOrder.status)) {
+        setOrders((prev) => [newOrder, ...prev.filter((order) => order.id !== newOrder.id)]);
+      }
     });
 
     // Escuchar cambios de estado desde otros clientes
@@ -69,7 +71,7 @@ export const KitchenBoard: React.FC = () => {
   // 3. Cambiar estado del pedido
   const handleStatusChange = async (orderId: string, status: 'IN_PREPARATION' | 'READY') => {
     try {
-      await api.put(`/orders/${orderId}/status`, { status });
+      await api.patch(`/orders/${orderId}/status`, { status });
     } catch (err) {
       console.error('Error al actualizar estado:', err);
     }

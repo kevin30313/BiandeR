@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma';
+import { AuthRequest } from '../middlewares/auth.middleware';
 
 interface OrderItemInput {
   productId: string;
@@ -8,13 +9,13 @@ interface OrderItemInput {
   notes?: string;
 }
 
-export const createOrder = async (req: Request, res: Response) => {
+const createOrderWithStatus = async (req: Request, res: Response, status: 'PENDING_APPROVAL' | 'PENDING') => {
   try {
     const { tableId, items } = req.body;
 
     const numericTableId = Number(tableId);
 
-    if (!tableId || isNaN(numericTableId) || !items || !Array.isArray(items) || items.length === 0) {
+    if (!tableId || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Mesa e ítems son requeridos' });
     }
 
@@ -37,20 +38,23 @@ export const createOrder = async (req: Request, res: Response) => {
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: product.price,
+        notes: item.notes,
       });
     }
 
     const order = await prisma.$transaction(async (tx) => {
-      // 1. Actualizar el estado de la mesa usando su número (Int)
-      const updatedTable = await tx.table.update({
-        where: { number: numericTableId },
-        data: { status: 'BUSY' },
+      // El menú público envía el número de mesa y el panel del garzón su UUID.
+      const table = await tx.table.findFirst({
+        where: Number.isNaN(numericTableId) ? { id: String(tableId) } : { number: numericTableId },
       });
+      if (!table) throw new Error(`Mesa no encontrada: ${tableId}`);
+      const updatedTable = await tx.table.update({ where: { id: table.id }, data: { status: 'BUSY' } });
 
       // 2. Crear la orden asociando el UUID de la mesa (updatedTable.id)
       const newOrder = await tx.order.create({
         data: {
           tableId: updatedTable.id,
+          status,
           totalAmount,
           items: {
             create: orderItemsData,
@@ -69,7 +73,12 @@ export const createOrder = async (req: Request, res: Response) => {
 
     const io = req.app.get('io');
     if (io) {
-      io.emit('order:created', order);
+      if (status === 'PENDING_APPROVAL') {
+        io.to('role:WAITER').emit('order:preorder_created', order);
+      } else {
+        io.to('role:KITCHEN').emit('order:created', order);
+        io.to('role:CASHIER').emit('order:created', order);
+      }
     }
 
     return res.status(201).json(order);
@@ -79,9 +88,64 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-export const getOrders = async (_req: Request, res: Response) => {
+export const createPublicPreorder = (req: Request, res: Response) =>
+  createOrderWithStatus(req, res, 'PENDING_APPROVAL');
+
+export const createWaiterOrder = (req: Request, res: Response) =>
+  createOrderWithStatus(req, res, 'PENDING');
+
+export const approvePreorder = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const current = await prisma.order.findUnique({ where: { id } });
+    if (!current) return res.status(404).json({ message: 'Orden no encontrada' });
+    if (current.status !== 'PENDING_APPROVAL') {
+      return res.status(400).json({ message: 'La orden ya no está pendiente de aprobación' });
+    }
+    const order = await prisma.order.update({
+      where: { id },
+      data: { status: 'PENDING' },
+      include: { items: { include: { product: true } }, table: true },
+    });
+    const io = req.app.get('io');
+    if (io) {
+      io.to('role:WAITER').emit('order:status_updated', order);
+      io.to('role:KITCHEN').emit('order:created', order);
+      io.to('role:CASHIER').emit('order:created', order);
+    }
+    return res.json(order);
+  } catch (error) {
+    console.error('Error al aprobar preorden:', error);
+    return res.status(500).json({ message: 'Error al aprobar la preorden' });
+  }
+};
+
+export const rejectPreorder = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const current = await prisma.order.findUnique({ where: { id } });
+    if (!current) return res.status(404).json({ message: 'Orden no encontrada' });
+    if (current.status !== 'PENDING_APPROVAL') {
+      return res.status(400).json({ message: 'La orden ya no está pendiente de aprobación' });
+    }
+    const order = await prisma.order.update({
+      where: { id },
+      data: { status: 'CANCELLED' },
+      include: { items: { include: { product: true } }, table: true },
+    });
+    const io = req.app.get('io');
+    if (io) io.to('role:WAITER').emit('order:status_updated', order);
+    return res.json(order);
+  } catch (error) {
+    console.error('Error al rechazar preorden:', error);
+    return res.status(500).json({ message: 'Error al rechazar la preorden' });
+  }
+};
+
+export const getOrders = async (req: AuthRequest, res: Response) => {
   try {
     const orders = await prisma.order.findMany({
+      where: ['WAITER', 'ADMIN'].includes(req.user?.role || '') ? {} : { status: { not: 'PENDING_APPROVAL' } },
       include: {
         items: {
           include: { product: true },
@@ -107,6 +171,12 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'El estado es requerido' });
     }
 
+    const current = await prisma.order.findUnique({ where: { id } });
+    if (!current) return res.status(404).json({ message: 'Orden no encontrada' });
+    if (current.status === 'PENDING_APPROVAL') {
+      return res.status(400).json({ message: 'Las preórdenes deben aprobarse o rechazarse desde la bandeja del garzón' });
+    }
+
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: { status },
@@ -119,8 +189,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     });
 
     const io = req.app.get('io');
-    if (io) {
-      io.emit('order:status_updated', updatedOrder);
+    if (io && updatedOrder.status !== 'PENDING_APPROVAL') {
+      io.to('role:WAITER').emit('order:status_updated', updatedOrder);
+      io.to('role:KITCHEN').emit('order:status_updated', updatedOrder);
+      io.to('role:CASHIER').emit('order:status_updated', updatedOrder);
     }
 
     return res.json(updatedOrder);
@@ -194,8 +266,9 @@ export const payOrder = async (req: Request, res: Response) => {
     // 4. Emitir eventos en tiempo real
     const io = req.app.get('io');
     if (io) {
-      io.emit('order:paid', { order: completedOrder, payment });
-      io.emit('table:freed', { tableId: order.tableId });
+      io.to('role:CASHIER').emit('order:paid', { order: completedOrder, payment });
+      io.to('role:WAITER').emit('order:paid', { order: completedOrder, payment });
+      io.to('role:WAITER').emit('table:freed', { tableId: order.tableId });
     }
 
     return res.json({
