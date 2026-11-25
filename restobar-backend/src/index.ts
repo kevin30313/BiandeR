@@ -10,6 +10,7 @@ import productRoutes from './routes/product.routes';
 import categoryRoutes from './routes/category.routes';
 import orderRoutes from './routes/order.routes';
 import reportRoutes from './routes/report.routes';
+import cashierRoutes from './routes/cashier.routes';
 
 dotenv.config();
 
@@ -78,6 +79,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/cashier', cashierRoutes);
 
 // Gestión de conexiones y salas (rooms)
 io.on('connection', (socket) => {

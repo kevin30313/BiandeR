@@ -248,7 +248,7 @@ export const payOrder = async (req: Request, res: Response) => {
     const { paymentMethod, referenceNum } = req.body;
 
     // 1. Validar que se proporcione un método de pago válido
-    const validMethods = ['CASH', 'POS_DEBIT', 'POS_CREDIT', 'TRANSFER'];
+    const validMethods = ['CASH', 'POS_DEBIT', 'POS_CREDIT', 'TRANSFER', 'MIXED'];
     if (!paymentMethod || !validMethods.includes(paymentMethod)) {
       return res.status(400).json({
         message: 'Método de pago inválido. Debe ser CASH, POS_DEBIT, POS_CREDIT o TRANSFER',

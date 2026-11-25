@@ -36,6 +36,7 @@ enum PaymentMethod {
   POS_DEBIT
   POS_CREDIT
   TRANSFER
+  MIXED
 }
 
 model User {
@@ -52,6 +53,7 @@ model Table {
   number Int         @unique
   status TableStatus @default(FREE)
   orders Order[]
+  cashSales CashSale[]
 }
 
 model Category {
@@ -80,6 +82,7 @@ model Order {
   totalAmount Float       @default(0)
   items       OrderItem[]
   payment     Payment?
+  cashSaleOrder CashSaleOrder?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
@@ -105,11 +108,42 @@ model Payment {
   createdAt     DateTime      @default(now())
 }
 
+model CashSale {
+  id            String        @id @default(uuid())
+  tableId       String
+  table         Table         @relation(fields: [tableId], references: [id])
+  totalAmount   Float
+  paymentMethod PaymentMethod?
+  referenceNum  String?
+  isReconciled  Boolean       @default(false)
+  orders        CashSaleOrder[]
+  createdAt     DateTime      @default(now())
+
+  @@index([createdAt])
+  @@index([tableId, createdAt])
+}
+
+model CashSaleOrder {
+  cashSaleId String
+  orderId    String   @unique
+  cashSale   CashSale @relation(fields: [cashSaleId], references: [id], onDelete: Restrict)
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@id([cashSaleId, orderId])
+  @@index([cashSaleId])
+}
+
 model ShiftClose {
-  id          String   @id @default(uuid())
-  openedAt    DateTime
-  closedAt    DateTime @default(now())
-  totalCash   Float    // Total recaudado en efectivo
-  totalPos    Float    // Total recaudado en tarjetas (Débito + Crédito)
-  totalAmount Float    // Gran total del turno
+  id              String   @id @default(uuid())
+  openedAt        DateTime
+  closedAt        DateTime @default(now())
+  totalCash       Float    // Total recaudado en efectivo
+  totalPos        Float    // Total recaudado en tarjetas (Débito + Crédito)
+  totalAmount     Float    // Gran total del turno
+  totalPosDebit   Float    @default(0)
+  totalPosCredit  Float    @default(0)
+  totalTransfer   Float    @default(0)
+  totalMixed      Float    @default(0)
+  totalUnassigned Float    @default(0)
+  salesCount      Int      @default(0)
 }
