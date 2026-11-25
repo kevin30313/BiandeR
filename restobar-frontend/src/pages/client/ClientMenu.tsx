@@ -12,10 +12,13 @@ export const ClientMenu = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [generalNotes, setGeneralNotes] = useState('');
+  const [cartOpen, setCartOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -70,6 +73,7 @@ export const ClientMenu = () => {
       setSubmitting(true);
       await api.post('/orders', {
         tableId: selectedTable,
+        notes: generalNotes,
         items: cart.map((item) => ({
           productId: item.product.id,
           quantity: item.quantity,
@@ -79,11 +83,24 @@ export const ClientMenu = () => {
 
       setOrderSent(true);
       setCart([]);
+      setGeneralNotes('');
+      setCartOpen(false);
     } catch (err) {
       console.error('Error al realizar el pedido:', err);
+      setSubmitError('No se pudo enviar la preorden. Revisa tu conexión e inténtalo nuevamente.');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const updateCartNotes = (productId: string, notes: string) => {
+    setCart((current) => current.map((item) => item.product.id === productId ? { ...item, notes } : item));
+  };
+
+  const updateCartQuantity = (productId: string, change: number) => {
+    setCart((current) => current
+      .map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + change } : item)
+      .filter((item) => item.quantity > 0));
   };
 
   const availableProducts = products.filter((p) => p.isAvailable !== false);
@@ -225,6 +242,7 @@ export const ClientMenu = () => {
         margin: '0 auto',
         fontFamily: 'sans-serif',
         color: '#111827',
+        overflowX: 'hidden',
       }}
     >
       {/* Encabezado */}
@@ -383,8 +401,7 @@ export const ClientMenu = () => {
             </p>
           </div>
           <button
-            onClick={handleClientOrder}
-            disabled={submitting}
+            onClick={() => { setSubmitError(''); setCartOpen(true); }}
             style={{
               backgroundColor: '#16a34a',
               color: '#ffffff',
@@ -393,12 +410,75 @@ export const ClientMenu = () => {
               borderRadius: '8px',
               fontWeight: 700,
               fontSize: '13px',
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              opacity: submitting ? 0.7 : 1,
+              minHeight: 44,
+              cursor: 'pointer',
             }}
           >
-            {submitting ? 'Enviando...' : 'Confirmar Pedido'}
+            Revisar pedido
           </button>
+        </div>
+      )}
+
+      {cartOpen && (
+        <div className="client-cart-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !submitting) setCartOpen(false); }}>
+          <section className="client-cart-panel" role="dialog" aria-modal="true" aria-labelledby="client-cart-title">
+            <header className="client-cart-header">
+              <div><h2 id="client-cart-title" style={{ margin: 0 }}>Tu pedido · Mesa #{selectedTable}</h2><p style={{ margin: '4px 0 0', color: '#6b7280' }}>Revisa cantidades y agrega indicaciones.</p></div>
+              <button type="button" onClick={() => setCartOpen(false)} disabled={submitting} aria-label="Cerrar resumen" style={{ minWidth: 44, minHeight: 44, fontSize: 24 }}>×</button>
+            </header>
+            <div className="client-cart-scroll">
+              {cart.map((item) => (
+                <article key={item.product.id} style={{ padding: '14px 0', borderBottom: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <strong style={{ overflowWrap: 'anywhere' }}>{item.product.name}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <button type="button" onClick={() => updateCartQuantity(item.product.id, -1)} aria-label={`Quitar una unidad de ${item.product.name}`} style={{ minWidth: 44, minHeight: 44 }}>−</button>
+                      <span>{item.quantity}</span>
+                      <button type="button" onClick={() => updateCartQuantity(item.product.id, 1)} aria-label={`Agregar una unidad de ${item.product.name}`} style={{ minWidth: 44, minHeight: 44 }}>+</button>
+                    </div>
+                  </div>
+                  <p style={{ margin: '4px 0 8px', color: '#4b5563' }}>${(item.product.price * item.quantity).toLocaleString()}</p>
+                  <label style={{ display: 'grid', gap: 5, fontSize: 14, fontWeight: 600 }}>
+                    Nota para este producto
+                    <input
+                      value={item.notes}
+                      maxLength={250}
+                      onChange={(event) => updateCartNotes(item.product.id, event.target.value)}
+                      placeholder="Ej. sin cebolla, sin hielo…"
+                      style={{ boxSizing: 'border-box', width: '100%', padding: 10, fontSize: 16, border: '1px solid #9ca3af', borderRadius: 8 }}
+                    />
+                  </label>
+                </article>
+              ))}
+              <label style={{ display: 'grid', gap: 6, marginTop: 16, fontSize: 14, fontWeight: 700 }}>
+                Observación para el garzón (opcional)
+                <textarea
+                  value={generalNotes}
+                  maxLength={250}
+                  onChange={(event) => setGeneralNotes(event.target.value)}
+                  placeholder="Ej. estamos celebrando, traer todo junto…"
+                  rows={3}
+                  style={{ boxSizing: 'border-box', width: '100%', padding: 10, fontSize: 16, border: '1px solid #9ca3af', borderRadius: 8, resize: 'vertical' }}
+                />
+                <span style={{ textAlign: 'right', color: '#6b7280', fontWeight: 400 }}>{generalNotes.length}/250</span>
+              </label>
+              {submitError && <p role="alert" style={{ color: '#991b1b', background: '#fee2e2', padding: 10, borderRadius: 8 }}>{submitError}</p>}
+            </div>
+            <footer className="client-cart-footer">
+              <strong style={{ fontSize: 20 }}>Total: ${totalAmount.toLocaleString()}</strong>
+              <button type="button" onClick={() => void handleClientOrder()} disabled={submitting || cart.length === 0} style={{ minHeight: 48, padding: '12px 18px', color: '#fff', background: '#15803d', border: 0, borderRadius: 8, fontWeight: 800, fontSize: 16 }}>
+                {submitting ? 'Enviando…' : 'Enviar preorden al garzón'}
+              </button>
+            </footer>
+          </section>
+          <style>{`
+            .client-cart-overlay{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.5)}
+            .client-cart-panel{width:min(100%,680px);max-height:min(92dvh,900px);display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
+            .client-cart-header{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #e5e7eb;background:#fff}
+            .client-cart-scroll{overflow-y:auto;overscroll-behavior:contain;padding:0 16px;min-height:0}
+            .client-cart-footer{position:sticky;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #e5e7eb;background:#fff}
+            @media(max-width:639px){.client-cart-overlay{place-items:end center;padding:0}.client-cart-panel{width:100%;height:100dvh;max-height:100dvh;border-radius:0}.client-cart-header{padding-top:calc(14px + env(safe-area-inset-top))}.client-cart-footer{align-items:stretch;flex-direction:column}.client-cart-footer button{width:100%}}
+          `}</style>
         </div>
       )}
     </div>

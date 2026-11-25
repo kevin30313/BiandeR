@@ -6,12 +6,25 @@ interface OrderItemInput {
   productId: string;
   quantity: number;
   unitPrice: number;
-  notes?: string;
+  notes: string | null;
 }
+
+class PreorderNotFoundError extends Error {}
+class PreorderNotEditableError extends Error {}
+class InvalidPreorderError extends Error {}
+class PreorderConflictError extends Error {}
+
+const sanitizeNote = (value: unknown, label: string): string | null => {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') throw new InvalidPreorderError(`${label} debe ser texto`);
+  const note = value.trim();
+  if (note.length > 250) throw new InvalidPreorderError(`${label} no puede superar 250 caracteres`);
+  return note || null;
+};
 
 const createOrderWithStatus = async (req: Request, res: Response, status: 'PENDING_APPROVAL' | 'PENDING') => {
   try {
-    const { tableId, items } = req.body;
+    const { tableId, items, notes } = req.body;
 
     const numericTableId = Number(tableId);
 
@@ -19,10 +32,28 @@ const createOrderWithStatus = async (req: Request, res: Response, status: 'PENDI
       return res.status(400).json({ message: 'Mesa e ítems son requeridos' });
     }
 
+    let generalNotes: string | null;
+    try {
+      generalNotes = sanitizeNote(notes, 'La observación general');
+    } catch (error) {
+      if (error instanceof InvalidPreorderError) return res.status(400).json({ message: error.message });
+      throw error;
+    }
+
     let totalAmount = 0;
     const orderItemsData: OrderItemInput[] = [];
 
     for (const item of items) {
+      if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+        return res.status(400).json({ message: 'La cantidad de cada producto debe ser un entero mayor que cero' });
+      }
+      let itemNotes: string | null;
+      try {
+        itemNotes = sanitizeNote(item.notes, 'La nota del producto');
+      } catch (error) {
+        if (error instanceof InvalidPreorderError) return res.status(400).json({ message: error.message });
+        throw error;
+      }
       const product = await prisma.product.findUnique({
         where: { id: item.productId },
       });
@@ -38,7 +69,7 @@ const createOrderWithStatus = async (req: Request, res: Response, status: 'PENDI
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: product.price,
-        notes: item.notes,
+        notes: itemNotes,
       });
     }
 
@@ -56,6 +87,7 @@ const createOrderWithStatus = async (req: Request, res: Response, status: 'PENDI
           tableId: updatedTable.id,
           status,
           totalAmount,
+          notes: generalNotes,
           items: {
             create: orderItemsData,
           },
@@ -95,19 +127,120 @@ export const createPublicPreorder = (req: Request, res: Response) =>
 export const createWaiterOrder = (req: Request, res: Response) =>
   createOrderWithStatus(req, res, 'PENDING');
 
+export const editPreorder = async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const { items } = req.body as { items?: { id?: string; productId: string; quantity: number; notes?: string | null }[] };
+  const hasGeneralNotes = Object.prototype.hasOwnProperty.call(req.body, 'notes');
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ message: 'La preorden debe contener al menos un producto' });
+  }
+
+  let generalNotes: string | null | undefined;
+  try {
+    generalNotes = hasGeneralNotes ? sanitizeNote(req.body.notes, 'La observación general') : undefined;
+    for (const item of items) {
+      if (!item.productId || !Number.isInteger(item.quantity) || item.quantity < 1) {
+        return res.status(400).json({ message: 'Cada producto requiere un identificador y una cantidad entera mayor que cero' });
+      }
+      item.notes = sanitizeNote(item.notes, 'La nota del producto');
+    }
+  } catch (error) {
+    if (error instanceof InvalidPreorderError) return res.status(400).json({ message: error.message });
+    throw error;
+  }
+
+  try {
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const current = await tx.order.findUnique({ where: { id }, include: { items: true } });
+      if (!current) throw new PreorderNotFoundError('Preorden no encontrada');
+      if (current.status !== 'PENDING_APPROVAL') throw new PreorderNotEditableError('La preorden ya fue confirmada o cancelada');
+
+      const existingItems = new Map(current.items.map((item) => [item.id, item]));
+      const resolvedItems: { id?: string; productId: string; quantity: number; unitPrice: number; notes: string | null }[] = [];
+      let totalAmount = 0;
+
+      for (const item of items) {
+        if (item.id) {
+          const existing = existingItems.get(item.id);
+          if (!existing || existing.productId !== item.productId) {
+            throw new InvalidPreorderError('Los productos existentes no pueden cambiar de identificador');
+          }
+          const product = await tx.product.findUnique({ where: { id: item.productId } });
+          if (!product) throw new InvalidPreorderError('Uno de los productos ya no existe');
+          resolvedItems.push({ id: item.id, productId: item.productId, quantity: item.quantity, unitPrice: existing.unitPrice, notes: item.notes || null });
+          totalAmount += existing.unitPrice * item.quantity;
+        } else {
+          const product = await tx.product.findUnique({ where: { id: item.productId } });
+          if (!product || !product.isAvailable) throw new InvalidPreorderError('Solo se pueden agregar productos activos del menú');
+          resolvedItems.push({ productId: product.id, quantity: item.quantity, unitPrice: product.price, notes: item.notes || null });
+          totalAmount += product.price * item.quantity;
+        }
+      }
+
+      const transition = await tx.order.updateMany({
+        where: { id, status: 'PENDING_APPROVAL' },
+        data: { totalAmount, ...(hasGeneralNotes ? { notes: generalNotes } : {}) },
+      });
+      if (transition.count === 0) throw new PreorderNotEditableError('La preorden ya fue confirmada o cancelada');
+
+      const retainedIds = resolvedItems.flatMap((item) => item.id ? [item.id] : []);
+      const removedIds = current.items.filter((item) => !retainedIds.includes(item.id)).map((item) => item.id);
+      if (removedIds.length > 0) {
+        await tx.orderItem.deleteMany({ where: { id: { in: removedIds }, orderId: id } });
+      }
+
+      for (const item of resolvedItems) {
+        if (item.id) {
+          await tx.orderItem.update({
+            where: { id: item.id },
+            data: { quantity: item.quantity, notes: item.notes },
+          });
+        } else {
+          await tx.orderItem.create({
+            data: { orderId: id, productId: item.productId, quantity: item.quantity, unitPrice: item.unitPrice, notes: item.notes },
+          });
+        }
+      }
+
+      return tx.order.findUnique({
+        where: { id },
+        include: { items: { include: { product: true } }, table: true },
+      });
+    });
+
+    if (!updatedOrder) return res.status(404).json({ message: 'Preorden no encontrada' });
+    const io = req.app.get('io');
+    if (io) {
+      io.to('role:WAITER').emit('order:preorder_updated', updatedOrder);
+      io.to('role:WAITER').emit('order:status_updated', updatedOrder);
+    }
+    return res.json(updatedOrder);
+  } catch (error) {
+    if (error instanceof PreorderNotFoundError) return res.status(404).json({ message: error.message });
+    if (error instanceof PreorderNotEditableError) return res.status(409).json({ message: error.message });
+    if (error instanceof InvalidPreorderError) return res.status(400).json({ message: error.message });
+    console.error('Error al editar preorden:', error);
+    return res.status(500).json({ message: 'Error al editar la preorden' });
+  }
+};
+
 export const approvePreorder = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const current = await prisma.order.findUnique({ where: { id } });
-    if (!current) return res.status(404).json({ message: 'Orden no encontrada' });
-    if (current.status !== 'PENDING_APPROVAL') {
-      return res.status(400).json({ message: 'La orden ya no está pendiente de aprobación' });
-    }
-    const order = await prisma.order.update({
-      where: { id },
-      data: { status: 'PENDING' },
-      include: { items: { include: { product: true } }, table: true },
+    const { order, count } = await prisma.$transaction(async (tx) => {
+      const result = await tx.order.updateMany({
+        where: { id, status: 'PENDING_APPROVAL' },
+        data: { status: 'PENDING' },
+      });
+      const updated = await tx.order.findUnique({
+        where: { id },
+        include: { items: { include: { product: true } }, table: true },
+      });
+      return { order: updated, count: result.count };
     });
+    if (!order) return res.status(404).json({ message: 'Orden no encontrada' });
+    if (count === 0) return res.status(409).json({ message: 'La preorden ya fue confirmada o cancelada' });
     const io = req.app.get('io');
     if (io) {
       io.to('role:WAITER').emit('order:status_updated', order);

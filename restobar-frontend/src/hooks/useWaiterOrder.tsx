@@ -12,6 +12,7 @@ export const useWaiterOrder = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
+  const [generalNotes, setGeneralNotes] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -93,6 +94,7 @@ export const useWaiterOrder = () => {
       setMessage(null);
       await api.post('/orders/manual', {
         tableId: selectedTableId,
+        notes: generalNotes,
         items: cart.map((item) => ({
           productId: item.product.id,
           quantity: item.quantity,
@@ -102,6 +104,7 @@ export const useWaiterOrder = () => {
       setMessage({ type: 'success', text: 'Comanda enviada a cocina y caja' });
       setCart([]);
       setSelectedTableId('');
+      setGeneralNotes('');
     } catch (err: any) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Error al enviar comanda' });
     } finally {
@@ -112,6 +115,7 @@ export const useWaiterOrder = () => {
   return {
     tables,
     categories,
+    products,
     filteredProducts,
     cart,
     total,
@@ -120,8 +124,10 @@ export const useWaiterOrder = () => {
     message,
     selectedTableId,
     selectedCategoryId,
+    generalNotes,
     setSelectedTableId,
     setSelectedCategoryId,
+    setGeneralNotes,
     addToCart,
     updateQuantity,
     updateNotes,

@@ -15,6 +15,7 @@ interface OrderItem {
 interface Order {
   id: string;
   status: 'PENDING' | 'IN_PREPARATION' | 'READY' | 'DELIVERED';
+  notes?: string | null;
   createdAt: string;
   table: {
     number: number;
@@ -114,12 +115,13 @@ export const KitchenBoard: React.FC = () => {
             >
               <h3>Mesa #{order.table.number}</h3>
               <p>Estado: <strong>{order.status}</strong></p>
+              {order.notes && <p style={{ margin: '10px 0', padding: '10px 12px', color: '#7f1d1d', background: '#fee2e2', border: '2px solid #ef4444', borderRadius: 8, fontWeight: 800 }}>Observación del garzón/cliente: {order.notes}</p>}
               <hr />
               <ul>
                 {order.items.map((item) => (
                   <li key={item.id}>
                     {item.quantity}x {item.product.name}
-                    {item.notes && <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>Nota: {item.notes}</p>}
+                    {item.notes && <p style={{ margin: '6px 0 0', padding: '6px 8px', fontSize: 13, color: '#7c2d12', background: '#ffedd5', borderRadius: 6, fontWeight: 700 }}>Nota: {item.notes}</p>}
                   </li>
                 ))}
               </ul>

@@ -11,6 +11,7 @@ import categoryRoutes from './routes/category.routes';
 import orderRoutes from './routes/order.routes';
 import reportRoutes from './routes/report.routes';
 import cashierRoutes from './routes/cashier.routes';
+import preorderRoutes from './routes/preorder.routes';
 
 dotenv.config();
 
@@ -78,6 +79,7 @@ app.use('/api/tables', tableRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/preorders', preorderRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/cashier', cashierRoutes);
 
