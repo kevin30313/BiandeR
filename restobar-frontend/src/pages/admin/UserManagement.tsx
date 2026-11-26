@@ -1,182 +1,110 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api/axiosInstance';
 import type { User, UserRole } from '../../types/user';
 
-const USERS_STORAGE_KEY = 'restobar-users';
-
-const getUsers = (): User[] => {
-  try {
-    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    return storedUsers ? (JSON.parse(storedUsers) as User[]) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveUsers = (users: User[]) => {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-};
-
-const createUser = (user: Pick<User, 'name' | 'email' | 'role'>) => {
-  const users = getUsers();
-  saveUsers([
-    ...users,
-    {
-      ...user,
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      active: true,
-    },
-  ]);
-};
-
-const toggleUserStatus = (id: string): User[] => {
-  const users = getUsers().map((user) =>
-    user.id === id ? { ...user, active: !user.active } : user,
-  );
-  saveUsers(users);
-  return users;
-};
-
-const deleteUser = (id: string): User[] => {
-  const users = getUsers().filter((user) => user.id !== id);
-  saveUsers(users);
-  return users;
-};
+const roles: { value: UserRole; label: string }[] = [
+  { value: 'WAITER', label: 'WAITER (Garzón)' },
+  { value: 'KITCHEN', label: 'KITCHEN (Cocina)' },
+  { value: 'CASHIER', label: 'CASHIER (Caja)' },
+  { value: 'ADMIN', label: 'ADMIN' },
+];
 
 export const UserManagement = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('WAITER');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ text: string; error?: boolean } | null>(null);
 
-  useEffect(() => {
-    setUsers(getUsers());
+  const loadUsers = useCallback(async () => {
+    try {
+      const { data } = await api.get<User[]>('/auth/users');
+      setUsers(data);
+    } catch (error: unknown) {
+      const message = typeof error === 'object' && error !== null && 'response' in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+      setFeedback({ text: message || 'No se pudieron cargar los usuarios.', error: true });
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleCreateUser = (e: FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
+  useEffect(() => { void loadUsers(); }, [loadUsers]);
 
-    createUser({ name, email, role });
-    setUsers(getUsers());
-    setName('');
-    setEmail('');
-    setRole('WAITER');
-  };
-
-  const handleToggle = (id: string) => {
-    setUsers(toggleUserStatus(id));
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('¿Seguro que deseas eliminar este usuario?')) {
-      setUsers(deleteUser(id));
+  const handleCreateUser = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setFeedback(null);
+    try {
+      await api.post('/auth/register', { name: name.trim(), email: email.trim(), password, role });
+      setName('');
+      setEmail('');
+      setPassword('');
+      setRole('WAITER');
+      setFeedback({ text: 'Usuario creado correctamente.' });
+      await loadUsers();
+    } catch (error: unknown) {
+      const message = typeof error === 'object' && error !== null && 'response' in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+      setFeedback({ text: message || 'No se pudo crear el usuario.', error: true });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '900px', margin: '0 auto' }}>
-      <button 
-        onClick={() => navigate('/admin')} 
-        style={{ marginBottom: '16px', cursor: 'pointer', padding: '6px 12px' }}
-      >
-        ← Volver al Admin Dashboard
-      </button>
+    <main style={{ padding: 'clamp(16px, 4vw, 32px)', fontFamily: 'sans-serif', maxWidth: 1000, margin: '0 auto', minWidth: 0, boxSizing: 'border-box' }}>
+      <button onClick={() => navigate('/admin')} style={{ marginBottom: 16, cursor: 'pointer', padding: '10px 14px', minHeight: 44 }}>← Volver al Admin Dashboard</button>
+      <h1>Gestión de Usuarios</h1>
+      <p>Registra cuentas del personal y asígnales el rol correspondiente.</p>
 
-      <h2>Gestión de Usuarios</h2>
-
-      <form 
-        onSubmit={handleCreateUser} 
-        style={{ 
-          display: 'flex', 
-          gap: '10px', 
-          marginBottom: '24px', 
-          padding: '16px', 
-          border: '1px solid #ccc', 
-          borderRadius: '8px',
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-        />
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-        />
-        <select 
-          value={role} 
-          onChange={(e) => setRole(e.target.value as UserRole)}
-          style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-        >
-          <option value="ADMIN">ADMIN</option>
-          <option value="CASHIER">CASHIER (Caja)</option>
-          <option value="WAITER">WAITER (Mesero)</option>
-          <option value="KITCHEN">KITCHEN (Cocina)</option>
-        </select>
-        <button 
-          type="submit" 
-          style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
-          Crear Usuario
+      <form onSubmit={(event) => void handleCreateUser(event)} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 12, marginBottom: 24, padding: 16, border: '1px solid #d1d5db', borderRadius: 10 }}>
+        <label style={labelStyle}>Nombre
+          <input value={name} onChange={(event) => setName(event.target.value)} required autoComplete="name" style={inputStyle} />
+        </label>
+        <label style={labelStyle}>Correo electrónico
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" style={inputStyle} />
+        </label>
+        <label style={labelStyle}>Contraseña inicial
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete="new-password" style={inputStyle} />
+        </label>
+        <label style={labelStyle}>Rol
+          <select value={role} onChange={(event) => setRole(event.target.value as UserRole)} style={inputStyle}>
+            {roles.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </label>
+        <button type="submit" disabled={submitting} style={{ alignSelf: 'end', minHeight: 44, padding: '10px 16px', background: '#2563eb', color: '#fff', border: 0, borderRadius: 7, cursor: submitting ? 'wait' : 'pointer', fontWeight: 700 }}>
+          {submitting ? 'Creando…' : 'Crear usuario'}
         </button>
       </form>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid #ccc', backgroundColor: '#f3f4f6' }}>
-            <th style={{ padding: '12px' }}>Nombre</th>
-            <th style={{ padding: '12px' }}>Email</th>
-            <th style={{ padding: '12px' }}>Rol</th>
-            <th style={{ padding: '12px' }}>Estado</th>
-            <th style={{ padding: '12px' }}>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
-              <td style={{ padding: '12px' }}>{u.name}</td>
-              <td style={{ padding: '12px' }}>{u.email}</td>
-              <td style={{ padding: '12px' }}>
-                <strong>{u.role}</strong>
-              </td>
-              <td style={{ padding: '12px' }}>
-                <span style={{ color: u.active ? 'green' : 'red', fontWeight: 'bold' }}>
-                  {u.active ? 'Activo' : 'Inactivo'}
-                </span>
-              </td>
-              <td style={{ padding: '12px', display: 'flex', gap: '8px' }}>
-                <button 
-                  onClick={() => handleToggle(u.id)}
-                  style={{ padding: '4px 8px', cursor: 'pointer' }}
-                >
-                  {u.active ? 'Desactivar' : 'Activar'}
-                </button>
-                <button 
-                  onClick={() => handleDelete(u.id)}
-                  style={{ padding: '4px 8px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  Eliminar
-                </button>
-              </td>
-            </tr>
+      {feedback && <p role="status" style={{ padding: 12, borderRadius: 8, background: feedback.error ? '#fee2e2' : '#dcfce7', color: feedback.error ? '#991b1b' : '#166534' }}>{feedback.text}</p>}
+
+      <h2>Usuarios registrados</h2>
+      {loading ? <p>Cargando usuarios…</p> : users.length === 0 ? <p>No hay usuarios registrados.</p> : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 12 }}>
+          {users.map((user) => (
+            <article key={user.id} style={{ minWidth: 0, padding: 16, border: '1px solid #d1d5db', borderRadius: 10, background: '#fff' }}>
+              <strong style={{ display: 'block', overflowWrap: 'anywhere' }}>{user.name}</strong>
+              <span style={{ display: 'block', margin: '6px 0 10px', overflowWrap: 'anywhere', color: '#4b5563' }}>{user.email}</span>
+              <span style={{ display: 'inline-block', padding: '4px 9px', background: '#eff6ff', color: '#1d4ed8', borderRadius: 999, fontWeight: 700 }}>{user.role}</span>
+            </article>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </div>
+      )}
+    </main>
   );
 };
+
+const labelStyle = { display: 'grid', gap: 6, fontWeight: 700 };
+const inputStyle = { width: '100%', boxSizing: 'border-box' as const, minHeight: 44, padding: 10, border: '1px solid #9ca3af', borderRadius: 7, fontSize: 16 };
 
 export default UserManagement;
