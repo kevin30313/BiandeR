@@ -11,27 +11,12 @@ async function main() {
   }
   const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-  // 1. Usuarios iniciales del sistema bajo el dominio @errandbi.com
+  // 1. Usuario maestro. El personal se registra desde /admin/users.
   const usersToSeed = [
     {
       name: 'Administrador Sistema',
       email: 'admin@errandbi.com',
       role: Role.ADMIN,
-    },
-    {
-      name: 'Caja Principal',
-      email: 'caja@errandbi.com',
-      role: Role.CASHIER,
-    },
-    {
-      name: 'Garzon Turno',
-      email: 'mesero@errandbi.com',
-      role: Role.WAITER,
-    },
-    {
-      name: 'Cocina Central',
-      email: 'kitchen@errandbi.com',
-      role: Role.KITCHEN,
     },
   ];
 
@@ -57,7 +42,7 @@ async function main() {
     });
   }
 
-  console.log('✅ Base de datos poblada y usuarios sincronizados con éxito (@errandbi.com)');
+  console.log('✅ Base de datos poblada con el usuario ADMIN maestro y las mesas iniciales');
 }
 
 main()
