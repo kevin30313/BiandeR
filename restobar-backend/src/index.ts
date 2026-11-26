@@ -1,25 +1,11 @@
-import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-import cors from 'cors';
-import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import authRoutes from './routes/auth.routes';
-import tableRoutes from './routes/table.routes';
-import productRoutes from './routes/product.routes';
-import categoryRoutes from './routes/category.routes';
-import orderRoutes from './routes/order.routes';
-import reportRoutes from './routes/report.routes';
-import cashierRoutes from './routes/cashier.routes';
-import preorderRoutes from './routes/preorder.routes';
-
-dotenv.config();
-
-const app = express();
-const server = http.createServer(app);
+import app from './app';
 
 const APP_NAME = process.env.APP_NAME || 'Restobar Backend API';
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
@@ -28,84 +14,32 @@ const io = new Server(server, {
   },
 });
 
-// Middleware de autenticación para WebSockets
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(' ')[1];
-
-  if (!token) {
-    return next(new Error('Autenticación fallida: Token no proporcionado'));
-  }
+  if (!token) return next(new Error('Autenticación fallida: Token no proporcionado'));
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
-    socket.data.user = decoded;
+    socket.data.user = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
     next();
-  } catch (error) {
+  } catch {
     next(new Error('Autenticación fallida: Token inválido o expirado'));
   }
 });
 
-// Compartir la instancia de Socket.io con los controladores de Express
 app.set('io', io);
 
-// Middlewares globales
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// Ruta raíz informativa
-app.get('/', (_req, res) => {
-  res.json({
-    status: 'online',
-    app: APP_NAME,
-    message: 'API de gestión de Restobar funcionando correctamente',
-    healthCheck: '/health',
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// Health check
-app.get('/health', (_req, res) => {
-  res.json({
-    status: 'OK',
-    app: APP_NAME,
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// Registro de rutas API
-app.use('/api/auth', authRoutes);
-app.use('/api/tables', tableRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/preorders', preorderRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/cashier', cashierRoutes);
-
-// Gestión de conexiones y salas (rooms)
 io.on('connection', (socket) => {
   const user = socket.data.user;
   console.log(`⚡ Cliente conectado a WebSockets: ${socket.id} | Rol: ${user?.role}`);
+  if (user?.role) socket.join(`role:${user.role}`);
 
-  // Unir automáticamente al socket a una sala según su rol
-  if (user?.role) {
-    socket.join(`role:${user.role}`);
-  }
-
-  // Permite unirse manualmente a salas específicas desde el frontend (ej: 'kitchen', 'cashier', 'tables')
   socket.on('join:room', (room: string) => {
     socket.join(room);
     console.log(`📡 Socket ${socket.id} se unió a la sala: ${room}`);
   });
 
-  socket.on('disconnect', () => {
-    console.log(`❌ Cliente desconectado: ${socket.id}`);
-  });
+  socket.on('disconnect', () => console.log(`❌ Cliente desconectado: ${socket.id}`));
 });
 
 const PORT = process.env.PORT || 4000;
-
-server.listen(PORT, () => {
-  console.log(`🚀 ${APP_NAME} ejecutándose en el puerto ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 ${APP_NAME} ejecutándose en el puerto ${PORT}`));
