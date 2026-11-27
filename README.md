@@ -1,6 +1,6 @@
-# VARELIS — Restobar Operations Platform
+# Biander — Restobar Operations Platform
 
-VARELIS centraliza la operación diaria de un restobar: menú QR y preórdenes por mesa, aprobación del garzón, preparación en cocina, cobro por mesa y cuadratura de caja. Los cambios de órdenes se distribuyen en tiempo real para que cada equipo trabaje con el mismo estado.
+Biander centraliza la operación diaria de un restobar: menú QR y preórdenes por mesa, aprobación del garzón, preparación en cocina, cobro por mesa y cuadratura de caja. Los cambios de órdenes se distribuyen en tiempo real para que cada equipo trabaje con el mismo estado.
 
 ## Stack
 
