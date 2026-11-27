@@ -126,3 +126,13 @@ GitHub Actions ejecuta estas comprobaciones al hacer `push` o abrir un `pull_req
 ### Evolución común
 
 Separar la configuración por ambiente, ejecutar migraciones como una tarea controlada de release, añadir métricas y trazas, definir políticas de backup/restore y probar recuperación. Para cargas mayores, desacoplar trabajos lentos mediante una cola y mantener PostgreSQL como fuente de verdad; Redis se reserva para coordinación/pub-sub y caché efímera.
+
+## Cuentas Demo
+
+Puedes probar los distintos flujos y vistas de **Biander** utilizando estas credenciales:
+
+| Rol | Correo | Contraseña |
+| :--- | :--- | :--- |
+| **Garzón (`WAITER`)** | `garzon@demo.com` | `garzon01` |
+| **Cocina (`KITCHEN`)** | `cocina@demo.com` | `cocina01` |
+| **Caja (`CASHIER`)** | `cajero@demo.com` | `cajero01` |
