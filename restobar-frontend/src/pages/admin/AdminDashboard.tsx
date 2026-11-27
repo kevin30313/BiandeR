@@ -3,12 +3,6 @@ import { useNavigate } from 'react-router-dom';
 export const AdminDashboard = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
   return (
     <main style={{ padding: 24, fontFamily: 'sans-serif' }}>
       <h1>Panel de Administración</h1>
@@ -33,7 +27,6 @@ export const AdminDashboard = () => {
         <button onClick={() => navigate('/kitchen')} style={buttonStyle('#fff')}>Ver Cocina</button>
         <button onClick={() => navigate('/waiter')} style={buttonStyle('#fff')}>Ver Garzones</button>
         <button onClick={() => navigate('/menu')} style={buttonStyle('#fff')}>Ver Menú Demo (Mesa #1)</button>
-        <button onClick={handleLogout} style={buttonStyle('#dc2626')}>Cerrar Sesión</button>
       </div>
     </main>
   );

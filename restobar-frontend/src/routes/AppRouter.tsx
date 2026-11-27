@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useSocketContext } from '../context/SocketContext';
 
 import ClientMenu from '../pages/client/ClientMenu';
 import UserManagement from '../pages/admin/UserManagement';
@@ -32,7 +34,43 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+};
+
+const AuthenticatedLayout = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
+  const { isConnected, disconnectSocket } = useSocketContext();
+  let user: { role?: string; email?: string } = {};
+  try {
+    user = JSON.parse(localStorage.getItem('user') || '{}');
+  } catch {
+    localStorage.removeItem('user');
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    disconnectSocket();
+    navigate('/login', { replace: true });
+  };
+
+  return (
+    <>
+      <header style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: 12, minHeight: 56, padding: '8px clamp(12px, 3vw, 28px)', boxSizing: 'border-box', borderBottom: '1px solid #e5e7eb', background: '#fff', fontFamily: 'sans-serif' }}>
+        <span style={{ color: '#4b5563', fontSize: 13 }}>
+          {user.role && <strong style={{ color: '#111827' }}>{user.role}</strong>}
+          {user.role && user.email && ' · '}{user.email}
+        </span>
+        <span aria-live="polite" style={{ color: isConnected ? '#15803d' : '#b91c1c', fontSize: 13, fontWeight: 700 }}>
+          Red: {isConnected ? '🟢 Online' : '🔴 Offline'}
+        </span>
+        <button type="button" onClick={handleLogout} style={{ minHeight: 40, padding: '8px 13px', color: '#374151', background: '#fff', border: '1px solid #d1d5db', borderRadius: 7, fontWeight: 700, cursor: 'pointer' }}>
+          Cerrar sesión
+        </button>
+      </header>
+      {children}
+    </>
+  );
 };
 
 export const AppRouter = () => (

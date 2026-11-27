@@ -27,7 +27,7 @@ export const KitchenBoard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState('');
-  const { socket, isConnected } = useSocketContext();
+  const { socket } = useSocketContext();
 
   // 1. Cargar pedidos pendientes al montar el componente
   useEffect(() => {
@@ -96,7 +96,6 @@ export const KitchenBoard: React.FC = () => {
   return (
     <div style={{ padding: '20px' }}>
       <h1>Pantalla de Cocina</h1>
-      <p>Estado de la conexión: {isConnected ? '🟢 Conectado' : '🔴 Desconectado'}</p>
       {actionMessage && <p role="status" style={{ padding: 12, background: '#dcfce7', color: '#166534', borderRadius: 8 }}>{actionMessage}</p>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>

@@ -77,7 +77,7 @@ export const WaiterOrders = () => {
     submitOrder,
   } = useWaiterOrder();
 
-  const { socket, isConnected } = useSocketContext();
+  const { socket } = useSocketContext();
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState<PanelTab>('ready');
   const [readyNotice, setReadyNotice] = useState('');
@@ -272,7 +272,6 @@ export const WaiterOrders = () => {
     <main style={{ padding: 'clamp(12px, 3vw, 28px)', fontFamily: 'sans-serif', maxWidth: 1500, margin: '0 auto', minWidth: 0, width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
         <h1 style={{ margin: 0, fontSize: 'clamp(24px, 4vw, 34px)' }}>Panel del Garzón</h1>
-        <span aria-live="polite">Red: {isConnected ? '🟢 Online' : '🔴 Offline'}</span>
       </header>
 
       {readyNotice && (
