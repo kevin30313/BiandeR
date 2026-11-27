@@ -76,4 +76,14 @@ describe('API esencial', () => {
     expect(response.status).toBe(400);
     expect(response.body.message).toMatch(/8 caracteres/);
   });
+
+  it('bloquea la autoeliminación de un ADMIN', async () => {
+    const response = await request(app)
+      .delete('/api/users/test-user')
+      .set('Authorization', `Bearer ${signToken('ADMIN')}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toMatch(/propio usuario administrador/);
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
+  });
 });

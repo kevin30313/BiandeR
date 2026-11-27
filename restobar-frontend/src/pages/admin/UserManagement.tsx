@@ -11,6 +11,15 @@ const roles: { value: UserRole; label: string }[] = [
   { value: 'ADMIN', label: 'ADMIN' },
 ];
 
+const getAuthenticatedUserId = (): string | null => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}') as { id?: string };
+    return user.id || null;
+  } catch {
+    return null;
+  }
+};
+
 export const UserManagement = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
@@ -20,7 +29,9 @@ export const UserManagement = () => {
   const [role, setRole] = useState<UserRole>('WAITER');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ text: string; error?: boolean } | null>(null);
+  const authenticatedUserId = getAuthenticatedUserId();
 
   const loadUsers = useCallback(async () => {
     try {
@@ -60,6 +71,25 @@ export const UserManagement = () => {
     }
   };
 
+  const handleDeleteUser = async (user: User) => {
+    if (!window.confirm(`¿Eliminar al usuario ${user.name} (${user.email})? Esta acción no se puede deshacer.`)) return;
+
+    setDeletingUserId(user.id);
+    setFeedback(null);
+    try {
+      await api.delete(`/users/${user.id}`);
+      setUsers((current) => current.filter((entry) => entry.id !== user.id));
+      setFeedback({ text: `El usuario ${user.email} fue eliminado correctamente.` });
+    } catch (error: unknown) {
+      const message = typeof error === 'object' && error !== null && 'response' in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+      setFeedback({ text: message || 'No se pudo eliminar el usuario.', error: true });
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
   return (
     <main style={{ padding: 'clamp(16px, 4vw, 32px)', fontFamily: 'sans-serif', maxWidth: 1000, margin: '0 auto', minWidth: 0, boxSizing: 'border-box' }}>
       <button onClick={() => navigate('/admin')} style={{ marginBottom: 16, cursor: 'pointer', padding: '10px 14px', minHeight: 44 }}>← Volver al Admin Dashboard</button>
@@ -96,6 +126,16 @@ export const UserManagement = () => {
               <strong style={{ display: 'block', overflowWrap: 'anywhere' }}>{user.name}</strong>
               <span style={{ display: 'block', margin: '6px 0 10px', overflowWrap: 'anywhere', color: '#4b5563' }}>{user.email}</span>
               <span style={{ display: 'inline-block', padding: '4px 9px', background: '#eff6ff', color: '#1d4ed8', borderRadius: 999, fontWeight: 700 }}>{user.role}</span>
+              {user.id !== authenticatedUserId && (
+                <button
+                  type="button"
+                  onClick={() => void handleDeleteUser(user)}
+                  disabled={deletingUserId === user.id}
+                  style={{ display: 'block', width: '100%', minHeight: 44, marginTop: 14, padding: '9px 12px', color: '#b91c1c', background: '#fff', border: '1px solid #fecaca', borderRadius: 7, fontWeight: 700, cursor: deletingUserId === user.id ? 'wait' : 'pointer' }}
+                >
+                  {deletingUserId === user.id ? 'Eliminando…' : 'Eliminar'}
+                </button>
+              )}
             </article>
           ))}
         </div>

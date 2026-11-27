@@ -9,6 +9,7 @@ import orderRoutes from './routes/order.routes';
 import reportRoutes from './routes/report.routes';
 import cashierRoutes from './routes/cashier.routes';
 import preorderRoutes from './routes/preorder.routes';
+import userRoutes from './routes/user.routes';
 import prisma from './prisma';
 
 const app = express();
@@ -44,6 +45,7 @@ app.get('/api/health', async (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
