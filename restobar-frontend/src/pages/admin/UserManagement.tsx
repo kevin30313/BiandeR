@@ -26,6 +26,7 @@ export const UserManagement = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>('WAITER');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -58,6 +59,7 @@ export const UserManagement = () => {
       setName('');
       setEmail('');
       setPassword('');
+      setShowPassword(false);
       setRole('WAITER');
       setFeedback({ text: 'Usuario creado correctamente.' });
       await loadUsers();
@@ -104,7 +106,18 @@ export const UserManagement = () => {
           <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" style={inputStyle} />
         </label>
         <label style={labelStyle}>Contraseña inicial
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete="new-password" style={inputStyle} />
+          <span style={{ position: 'relative', display: 'block' }}>
+            <input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete="new-password" style={{ ...inputStyle, paddingRight: 82 }} />
+            <button
+              type="button"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((visible) => !visible)}
+              style={{ position: 'absolute', top: '50%', right: 7, transform: 'translateY(-50%)', padding: '5px 7px', color: '#374151', background: 'transparent', border: 0, borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
+            >
+              {showPassword ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </span>
         </label>
         <label style={labelStyle}>Rol
           <select value={role} onChange={(event) => setRole(event.target.value as UserRole)} style={inputStyle}>

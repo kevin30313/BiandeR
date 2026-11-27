@@ -6,6 +6,7 @@ import { useSocketContext } from '../context/SocketContext';
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -66,13 +67,25 @@ export const Login: React.FC = () => {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div style={{ position: 'relative', width: '100%' }}>
+          <input
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 76px 10px 8px' }}
+          />
+          <button
+            type="button"
+            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            aria-pressed={showPassword}
+            onClick={() => setShowPassword((visible) => !visible)}
+            style={{ position: 'absolute', top: '50%', right: 8, transform: 'translateY(-50%)', padding: '5px 7px', color: '#374151', background: 'transparent', border: 0, borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
+          >
+            {showPassword ? 'Ocultar' : 'Mostrar'}
+          </button>
+        </div>
         
         <button type="submit" disabled={loading}>
           {loading ? 'Cargando...' : 'Ingresar'}
